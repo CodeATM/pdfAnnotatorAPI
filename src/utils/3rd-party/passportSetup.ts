@@ -4,8 +4,8 @@ import User, { IUser } from "../../module/V1/models/userModel";
 
 const callbackURL =
   process.env.NODE_ENV === "prod"
-    ? "https://forge-api-5ubm.onrender.com/api/v1/auth/google/callback"
-    : "http://localhost:5000/api/v1/auth/google/callback";
+    ? process.env.PROD_GOOGLE_CALLBACK
+    : process.env.DEV_GOOGLE_CALLBACK;
 
 passport.use(
   new GoogleStrategy(
