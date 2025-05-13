@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    // Specifies the output directory for compiled JavaScript files.
+    "outDir": "dist",
+
+    // Generates source maps for debugging compiled code.
+    "sourceMap": true,
+
+    // Enforces the explicit declaration of types.
+    "noImplicitAny": true,
+
+    // Sets the module system for the project.
+    "module": "commonjs",
+
+    // Specifies the ECMAScript target version.
+    "target": "es6",
+
+    // Allows JavaScript files to be compiled alongside TypeScript files.
+    "allowJs": true,
+
+    // Specifies the directories where TypeScript should look for type types.
+    "typeRoots": ["src/types", "node_modules/@types"],
+
+    // Determines how module imports are resolved.
+    "moduleResolution": "node",
+
+    // Skips type checking of declaration files to speed up compilation.
+    "skipLibCheck": true,
+
+    // Enables interoperability between CommonJS and ES modules.
+    "esModuleInterop": true
+  },
+  "include": [
+    // Specifies the directories to include in the TypeScript compilation.
+    "src/**/*"
+  ],
+  "exclude": [
+    // Specifies the directories to exclude from the TypeScript compilation.
+    "node_modules",
+    "docs*"
+  ]
+}

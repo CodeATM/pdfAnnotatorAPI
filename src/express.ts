@@ -1,0 +1,35 @@
+import express, { Request, Response, NextFunction } from "express";
+import logger from "./logger";
+import connectDB from "./utils/Databases/MongoDB";
+import cors from "cors";
+import { errorHandler } from "./module/V1/middlewares/error.middleware";
+import authRoutes from "./module/V1/Routes/auth.routes";
+const app = express();
+
+connectDB();
+
+// Middleware
+const corsOptions = {
+  origin: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  exposedHeaders: ["Content-Length", "X-Kuma-Revision"],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  preflightContinue: false,
+  maxAge: 600,
+};
+
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+// Example Route
+app.get("/health", (req: Request, res: Response) => {
+  res.status(200).json({ message: "This Server is working perfectly" });
+});
+app.use("/api/v1/auth", authRoutes);
+
+app.use(errorHandler);
+
+export default app;
