@@ -10,14 +10,25 @@ connectDB();
 
 // Middleware
 const corsOptions = {
-  origin: true,
+  origin: (origin: any, callback: any) => {
+    // Allow requests from specific origins or any origin for development
+    const allowedOrigins = [
+      "http://localhost:3000",
+      "https://your-frontend-production.com",
+    ];
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
   exposedHeaders: ["Content-Length", "X-Kuma-Revision"],
-  credentials: true,
-  optionsSuccessStatus: 200,
-  preflightContinue: false,
-  maxAge: 600,
+  credentials: true, // Allow cookies and credentials
+  optionsSuccessStatus: 200, // For older browsers
+  preflightContinue: false, // Handle preflight requests automatically
+  maxAge: 600, // Cache preflight response for 10 minutes
 };
 
 app.use(cors(corsOptions));

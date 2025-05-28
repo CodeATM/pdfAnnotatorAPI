@@ -14,10 +14,10 @@ export function setHttpOnlyCookie(
 
   res.cookie(cookieName, value, {
     httpOnly: true,
-    secure: isProduction, // Secure cookies in production
-    sameSite: isProduction ? "none" : "lax", // 'none' allows cross-origin cookies
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     maxAge,
-    domain: isProduction ? "yourdomain.com" : undefined,
+    domain: isProduction ? "yourdomain.com" : "localhost:3000", // Adjust domain as needed
     path: "/",
   });
 }
