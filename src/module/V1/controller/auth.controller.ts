@@ -13,11 +13,10 @@ export function setHttpOnlyCookie(
   const isProduction = process.env.NODE_ENV === "prod";
 
   res.cookie(cookieName, value, {
-  httpOnly: false, // Must be false for Middleware to access
+  httpOnly: false,
   secure: isProduction,
   sameSite: isProduction ? "none" : "lax",
   maxAge,
-  // domain: "localhost", // Optional, but do NOT include port
   path: "/",
   });
 }
