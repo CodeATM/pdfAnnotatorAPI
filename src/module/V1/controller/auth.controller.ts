@@ -14,8 +14,8 @@ export function setHttpOnlyCookie(
 
   res.cookie(cookieName, value, {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? "strict" : "lax",
+    secure: isProduction, // Secure cookies in production
+    sameSite: isProduction ? "none" : "lax", // 'none' allows cross-origin cookies
     maxAge,
     domain: isProduction ? "yourdomain.com" : undefined,
     path: "/",
