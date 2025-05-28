@@ -10,7 +10,7 @@ export function setHttpOnlyCookie(
   value: string,
   maxAge: number
 ) {
-  const isProduction = process.env.NODE_ENV === "production";
+  const isProduction = process.env.NODE_ENV === "prod";
 
   res.cookie(cookieName, value, {
     httpOnly: true,
