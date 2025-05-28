@@ -13,12 +13,9 @@ export function setHttpOnlyCookie(
   const isProduction = process.env.NODE_ENV === "prod";
 
   res.cookie(cookieName, value, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? "none" : "lax",
-    maxAge,
-    domain: isProduction ? "localhost:3000" : "localhost:3000", // Adjust domain as needed
-    path: "/",
+    httpOnly: true,        
+    secure: true,          
+    sameSite: "none", 
   });
 }
 
