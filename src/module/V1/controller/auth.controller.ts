@@ -17,7 +17,7 @@ export function setHttpOnlyCookie(
     secure: isProduction,
     sameSite: isProduction ? "none" : "lax",
     maxAge,
-    domain: isProduction ? "yourdomain.com" : "localhost:3000", // Adjust domain as needed
+    domain: isProduction ? "localhost:3000" : "localhost:3000", // Adjust domain as needed
     path: "/",
   });
 }
