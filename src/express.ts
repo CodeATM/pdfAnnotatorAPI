@@ -10,18 +10,7 @@ connectDB();
 
 // Middleware
 const corsOptions = {
-  origin: (origin: any, callback: any) => {
-    // Allow requests from specific origins or any origin for development
-    const allowedOrigins = [
-      "http://localhost:3000",
-      "https://your-frontend-production.com",
-    ];
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
+  origin: true, // Allow all origins
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
   exposedHeaders: ["Content-Length", "X-Kuma-Revision"],
