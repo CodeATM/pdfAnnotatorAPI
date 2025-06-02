@@ -13,12 +13,10 @@ export function setHttpOnlyCookie(
   const isProduction = process.env.NODE_ENV === "prod";
 
   res.cookie(cookieName, value, {
-    httpOnly: true, // Set to true to prevent client-side access for security
-    secure: false,
-    sameSite: isProduction ? "none" : "lax", // "none" for cross-site, "lax" for local
-    maxAge, // Cookie expiration in milliseconds
-    path: "/", // Cookie is accessible throughout the site
-    domain: isProduction ? "your-production-domain.com" : "localhost", // Set to localhost in development
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    path: "/",
   });
 }
 
