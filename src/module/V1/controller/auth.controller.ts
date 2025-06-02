@@ -13,7 +13,7 @@ export function setHttpOnlyCookie(
   const isProduction = process.env.NODE_ENV === "prod";
 
   res.cookie(cookieName, value, {
-    httpOnly: true,
+    httpOnly: false,
     secure: process.env.NODE_ENV === "prod",
     sameSite: process.env.NODE_ENV === "prod" ? "none" : "lax",
     path: "/",
