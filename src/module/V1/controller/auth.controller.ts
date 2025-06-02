@@ -14,7 +14,7 @@ export function setHttpOnlyCookie(
 
   res.cookie(cookieName, value, {
     httpOnly: true, // Set to true to prevent client-side access for security
-    secure: isProduction, // Use HTTPS only in production
+    secure: false,
     sameSite: isProduction ? "none" : "lax", // "none" for cross-site, "lax" for local
     maxAge, // Cookie expiration in milliseconds
     path: "/", // Cookie is accessible throughout the site
