@@ -44,9 +44,14 @@ authRoutes.get(
       });
 
       const data = { userId, accessToken, refreshToken };
-      setHttpOnlyCookie(res, "accessToken", data.accessToken, 15 * 60 * 1000);
-      setHttpOnlyCookie(res, "refreshToken", data.refreshToken, 15 * 60 * 1000);
-      await successResponse(res, 201, "User authenticated successfully", data);
+
+      // Set HttpOnly cookies for tokens
+      setHttpOnlyCookie(res, "accessToken", data.accessToken, 15 * 60 * 1000); // 15 minutes
+      setHttpOnlyCookie(res, "refreshToken", data.refreshToken, 15 * 60 * 1000); // 15 minutes
+
+      // Redirect to frontend /home after successful authentication
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+      res.redirect(`${frontendUrl}/home`);
     } catch (error) {
       res.status(500).json({ message: "Internal Server Error" });
     }
