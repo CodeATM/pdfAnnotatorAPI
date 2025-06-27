@@ -31,7 +31,7 @@ app.get("/health", (req: Request, res: Response) => {
   res.status(200).json({ message: "This Server is working perfectly" });
 });
 app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/user", userRoutes);
+app.use("/api/v1/profile", userRoutes);
 app.use("/api/v1/file", pdfRoutes );
 
 app.use(errorHandler);
