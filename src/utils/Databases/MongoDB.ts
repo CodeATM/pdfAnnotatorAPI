@@ -3,7 +3,7 @@ import logger from "../../logger";
 
 const connectDB = async () => {
   try {
-    const dbUri = process.env.MONGO_URI || "mongodb://localhost:27017/pdf-api";
+    const dbUri = process.env.MONGO_URI || process.env.MONGO_URI_DEV;
 
     await mongoose.connect(dbUri, {
       useNewUrlParser: true,
