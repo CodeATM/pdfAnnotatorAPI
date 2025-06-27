@@ -2,14 +2,6 @@ import Jwt from "jsonwebtoken";
 import { UnauthorizedError } from "./error.middleware";
 import { Response, Request, NextFunction } from "express";
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: string;
-    }
-  }
-}
-
 export const verify = async (
   req: Request,
   res: Response,
@@ -32,7 +24,6 @@ export const verify = async (
       process.env.VERIFICATION_TOKEN_SECRET as string
     ) as { userId: string };
 
-    console.log(decodedToken.userId);
     req.user = decodedToken.userId;
     next();
   } catch (err) {
