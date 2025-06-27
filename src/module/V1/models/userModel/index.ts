@@ -28,7 +28,6 @@ const UserSchema: Schema<IUser> = new Schema<IUser>(
     gender: {
       type: String,
       enum: ["Male", "Female", "Other"],
-      default: "Other",
     },
     role: {
       type: String,
