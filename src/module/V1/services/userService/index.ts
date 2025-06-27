@@ -21,7 +21,7 @@ export const getUser = async (userId: any) => {
   await CheckUser(userId);
 
   const user = await User.findById(userId).select(
-    "firstname lastname role gender email"
+    "firstName lastName role gender email"
   );
 
   return user;
