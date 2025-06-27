@@ -33,6 +33,7 @@ authRoutes.get(
       const user = req.user as { _id: string }; // Casting user type
       const userId = user._id;
 
+      // Generate tokens
       const accessToken = await createJwtTokenFunc({
         UserIdentity: { userId },
         expiresIn: process.env.VERIFICATION_ACCESS_TOKEN_EXP!,
@@ -43,11 +44,18 @@ authRoutes.get(
         expiresIn: process.env.VERIFICATION_REFRESH_TOKEN_EXP!,
       });
 
-      const data = { userId, accessToken, refreshToken };
-      setHttpOnlyCookie(res, "accessToken", data.accessToken, 15 * 60 * 1000);
-      setHttpOnlyCookie(res, "refreshToken", data.refreshToken, 15 * 60 * 1000);
-      await successResponse(res, 201, "User authenticated successfully", data);
+      // Set cookies
+      setHttpOnlyCookie(res, "accessToken", accessToken, 15 * 60 * 1000);
+      setHttpOnlyCookie(res, "refreshToken", refreshToken, 15 * 60 * 1000);
+
+      // Optionally log success
+      console.log("User authenticated successfully:", userId);
+
+      // Redirect to frontend `/home` after setting cookies
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+      return res.redirect(`${frontendUrl}/home`);
     } catch (error) {
+      console.error("Error in Google OAuth callback:", error);
       res.status(500).json({ message: "Internal Server Error" });
     }
   }
