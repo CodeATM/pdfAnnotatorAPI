@@ -15,3 +15,14 @@ export const CheckUser = async (userId: any) => {
     throw new NotFoundError("User not found or does nor exist.");
   }
 };
+
+
+export const getUser = async (userId: any) => {
+  await CheckUser(userId);
+
+  const user = await User.findById(userId).select(
+    "firstName lastName role gender email"
+  );
+
+  return user;
+};
