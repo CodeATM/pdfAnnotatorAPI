@@ -32,7 +32,7 @@ app.get("/health", (req: Request, res: Response) => {
 });
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/file", pdfRoutes );
+app.use("/api/v1/file", pdfRoutes);
 
 app.use(errorHandler);
 
