@@ -15,13 +15,11 @@ const error_middleware_1 = require("../middlewares/error.middleware");
 const authService_1 = require("../services/authService");
 const response_1 = require("../../../utils/response");
 function setHttpOnlyCookie(res, cookieName, value, maxAge) {
-    const isProduction = process.env.NODE_ENV === "production";
+    const isProduction = process.env.NODE_ENV === "prod";
     res.cookie(cookieName, value, {
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? "strict" : "lax",
-        maxAge,
-        domain: isProduction ? "yourdomain.com" : undefined,
+        httpOnly: false,
+        secure: process.env.NODE_ENV === "prod",
+        sameSite: process.env.NODE_ENV === "prod" ? "none" : "lax",
         path: "/",
     });
 }

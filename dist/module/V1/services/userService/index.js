@@ -12,21 +12,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const mongoose_1 = __importDefault(require("mongoose"));
-const logger_1 = __importDefault(require("../../logger"));
-const connectDB = () => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const dbUri = process.env.MONGO_URI || process.env.MONGO_URI_DEV;
-        yield mongoose_1.default.connect(dbUri, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
-        logger_1.default.info("Connected to MongoDB");
+exports.getUser = exports.CheckUser = void 0;
+const error_middleware_1 = require("../../middlewares/error.middleware");
+const userModel_1 = __importDefault(require("../../models/userModel"));
+const CheckUser = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!userId) {
+        throw new error_middleware_1.BadRequestError("User Id cannot be empty");
     }
-    catch (error) {
-        logger_1.default.error("MongoDB connection error:", error);
-        process.exit(1);
+    const user = yield userModel_1.default.findById(userId);
+    if (!user) {
+        throw new error_middleware_1.NotFoundError("User not found or does nor exist.");
     }
 });
-exports.default = connectDB;
-//# sourceMappingURL=MongoDB.js.map
+exports.CheckUser = CheckUser;
+const getUser = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    yield (0, exports.CheckUser)(userId);
+    const user = yield userModel_1.default.findById(userId).select("firstName lastName role gender email");
+    return user;
+});
+exports.getUser = getUser;
+//# sourceMappingURL=index.js.map

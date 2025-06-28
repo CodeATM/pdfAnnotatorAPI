@@ -24,7 +24,6 @@ const verify = (req, res, next) => __awaiter(void 0, void 0, void 0, function* (
     const token = authHeader.split(" ")[1];
     try {
         const decodedToken = jsonwebtoken_1.default.verify(token, process.env.VERIFICATION_TOKEN_SECRET);
-        console.log(decodedToken.userId);
         req.user = decodedToken.userId;
         next();
     }

@@ -8,25 +8,20 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const mongoose_1 = __importDefault(require("mongoose"));
-const logger_1 = __importDefault(require("../../logger"));
-const connectDB = () => __awaiter(void 0, void 0, void 0, function* () {
+exports.myAccount = void 0;
+const userService_1 = require("../services/userService");
+const response_1 = require("../../../utils/response");
+const myAccount = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const dbUri = process.env.MONGO_URI || process.env.MONGO_URI_DEV;
-        yield mongoose_1.default.connect(dbUri, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
-        logger_1.default.info("Connected to MongoDB");
+        const userId = req.user;
+        const data = yield (0, userService_1.getUser)(userId);
+        yield (0, response_1.successResponse)(res, 200, "profile fetched successfully", data);
     }
     catch (error) {
-        logger_1.default.error("MongoDB connection error:", error);
-        process.exit(1);
+        console.error(error);
+        next(error);
     }
 });
-exports.default = connectDB;
-//# sourceMappingURL=MongoDB.js.map
+exports.myAccount = myAccount;
+//# sourceMappingURL=userController.js.map

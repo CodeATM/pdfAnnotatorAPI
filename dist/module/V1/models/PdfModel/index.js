@@ -34,41 +34,41 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-// Define the User Schema
-const UserSchema = new mongoose_1.Schema({
-    firstName: {
+const CollaboratorSchema = new mongoose_1.Schema({
+    userId: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
+    role: { type: String, enum: ["viewer", "editor"], default: "viewer" },
+});
+const PDFSchema = new mongoose_1.Schema({
+    title: { type: String, required: true },
+    fileUrl: { type: String, required: true },
+    uploadedBy: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
+    collaborators: [CollaboratorSchema],
+    version: { type: Number, default: 1 },
+    size: { type: Number, required: true },
+    views: { type: Number, default: 0 },
+    downloads: { type: Number, default: 0 },
+    status: {
         type: String,
-        trim: true,
+        enum: ["active", "archived", "deleted"],
+        default: "active",
     },
-    lastName: {
-        type: String,
-        trim: true,
-    },
-    gender: {
-        type: String,
-        enum: ["Male", "Female", "Other"],
-    },
-    role: {
-        type: String,
-        enum: ["Personal", "Business", "Academics"],
-        default: "Personal",
-    },
-    email: {
-        type: String,
-        required: [true, "Email is required"],
-        unique: true,
-        trim: true,
-        lowercase: true,
-        match: [/\S+@\S+\.\S+/, "Invalid email format"],
-    },
-    password: {
-        type: String,
-        minlength: [6, "Password must be at least 6 characters long"],
+    fileId: { type: String, required: true, unique: true },
+    lastEditedBy: { type: mongoose_1.Schema.Types.ObjectId, ref: "User" },
+    lastEditedAt: { type: Date },
+    accessControl: {
+        publicAccess: { type: Boolean, default: false },
+        defaultRole: {
+            type: String,
+            enum: ["viewer", "editor"],
+            default: "viewer",
+        },
+        roles: {
+            editor: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "User" }],
+            viewer: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "User" }],
+        },
     },
 }, {
     timestamps: true,
 });
-// Export the Model
-const User = mongoose_1.default.model("User", UserSchema);
-exports.default = User;
+exports.default = mongoose_1.default.model("PDF", PDFSchema);
 //# sourceMappingURL=index.js.map
