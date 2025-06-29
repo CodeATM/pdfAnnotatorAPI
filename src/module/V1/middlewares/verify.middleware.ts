@@ -8,23 +8,15 @@ export const verify = async (
   next: NextFunction
 ): Promise<void> => {
   const authHeader = req.headers.authorization;
-  let token: string | undefined;
 
-  // First, try to get token from Authorization header
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    token = authHeader.split(" ")[1];
-  }
-  // If no token in header, try to get it from cookies (accessToken)
-  else if (req.cookies && req.cookies.accessToken) {
-    token = req.cookies.accessToken;
-  }
-
-  // Check if token was found in either location
-  if (!token) {
+  // Check for the presence of the Authorization header
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return next(
-      new UnauthorizedError("Missing or invalid Authorization token")
+      new UnauthorizedError("Missing or invalid Authorization header")
     );
   }
+
+  const token = authHeader.split(" ")[1];
 
   try {
     const decodedToken = Jwt.verify(
@@ -35,6 +27,6 @@ export const verify = async (
     req.user = decodedToken.userId;
     next();
   } catch (err) {
-    next(new UnauthorizedError("Invalid or expired token"));
+    next(err);
   }
 };
