@@ -7,6 +7,7 @@ import {
 } from "../../middlewares/error.middleware";
 import PdfModel from "../../models/PdfModel";
 import { AccessRequest } from "../../models/invitesModel";
+import AnnotationModel from "../../models/annotationModel";
 
 export async function uploadPDFToCloudinary(
   buffer: Buffer,
@@ -110,16 +111,41 @@ export async function getSinglePDFService({
   userId: any;
 }): Promise<any> {
   try {
-    const pdf = await PdfModel.findOne({ fileId });
+    const pdf = await PdfModel.findOne({ fileId: fileId })
+      .populate({
+        path: "uploadedBy",
+        select: "firstName lastName email profilePicture",
+      })
+      .populate({
+        path: "collaborators.userId",
+        select: "firstName lastName email profilePicture",
+      });
+
     if (!pdf) {
       throw new NotFoundError("File not found.");
     }
 
-    if (pdf.uploadedBy.toString() !== userId.toString()) {
+    const isOwner = pdf.uploadedBy._id.toString() === userId.toString();
+    const isCollaborator = pdf.collaborators.some(
+      (collab: any) => collab.userId._id.toString() === userId.toString()
+    );
+
+    if (!isOwner && !isCollaborator) {
       throw new UnauthorizedError("You do not have access to this file.");
     }
 
-    return pdf;
+    // ✅ Fetch annotations for the file
+    const annotations = await AnnotationModel.find({ fileId: pdf.id })
+      .populate({
+        path: "createdBy",
+        select: "firstName lastName email profilePicture",
+      })
+      .lean();
+
+    return {
+      ...pdf.toObject(),
+      annotations,
+    };
   } catch (error) {
     throw error;
   }

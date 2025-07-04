@@ -6,6 +6,7 @@ import { errorHandler } from "./module/V1/middlewares/error.middleware";
 import authRoutes from "./module/V1/Routes/auth.routes";
 import pdfRoutes from "./module/V1/Routes/pdf-routes";
 import userRoute from "./module/V1/Routes/user.routes";
+import annotationRoutes from "./module/V1/Routes/annotationsroute";
 const app = express();
 
 connectDB();
@@ -33,6 +34,7 @@ app.get("/health", (req: Request, res: Response) => {
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/file", pdfRoutes);
+app.use("/api/v1/anon", annotationRoutes);
 
 app.use(errorHandler);
 
