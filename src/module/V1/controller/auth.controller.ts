@@ -1,6 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import { BadRequestError } from "../middlewares/error.middleware";
-import { registerService, loginService } from "../services/authService";
+import {
+  registerService,
+  loginService,
+  refreshService,
+  verifyUserService,
+} from "../services/authService";
 import { successResponse } from "../../../utils/response";
 import { RegisterRequestBody, LoginRequestBody } from "../../../utils/types";
 
@@ -30,14 +35,6 @@ export const register = async (
 
     const registerData = { firstName, lastName, password, email };
     const data = await registerService(registerData);
-
-    setHttpOnlyCookie(res, "accessToken", data.accessToken, 15 * 60 * 1000);
-    setHttpOnlyCookie(
-      res,
-      "refreshToken",
-      data.refreshToken,
-      7 * 24 * 60 * 60 * 1000
-    );
 
     await successResponse(res, 200, "Activation code sent to your mail", data);
   } catch (error) {
@@ -77,44 +74,44 @@ export const loginUser = async (
 
 // ==========================================================
 
-// export const activateAccount = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ): Promise<void> => {
-//   try {
-//     const { token } = req.query as { token?: string };
-//     if (!token) {
-//       throw new BadRequestError("Activation Token missing.");
-//     }
+export const activateAccount = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { token } = req.body as { token?: string };
+    if (!token) {
+      throw new BadRequestError("Activation Token missing.");
+    }
 
-//     const data = await verifyUserService(token);
-//     await successResponse(res, 200, "Verification Successful", data);
-//   } catch (error) {
-//     console.error(error);
-//     next(error);
-//   }
-// };
+    const data = await verifyUserService(token);
+    await successResponse(res, 200, "Verification Successful", data);
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+};
 
-// export const refreshToken = async (
-//   req: Request<{}, {}, RefreshTokenRequestBody>,
-//   res: Response,
-//   next: NextFunction
-// ): Promise<void> => {
-//   try {
-//     const { refreshToken } = req.body;
-//     if (!refreshToken) {
-//       throw new BadRequestError("Missing refresh Token");
-//     }
-//     const newAccessToken = await refreshService(refreshToken);
-//     await successResponse(res, 200, "Refresh Access Token Successfully.", {
-//       accessToken: newAccessToken,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     next(error);
-//   }
-// };
+export const refreshToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      throw new BadRequestError("Missing refresh Token");
+    }
+    const newAccessToken = await refreshService({ refreshToken });
+    await successResponse(res, 200, "Refresh Access Token Successfully.", {
+      accessToken: newAccessToken,
+    });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+};
 
 // export const changePassword = async (
 //   req: Request<{}, {}, ChangePasswordRequestBody>,

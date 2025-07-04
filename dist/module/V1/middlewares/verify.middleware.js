@@ -17,13 +17,11 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const error_middleware_1 = require("./error.middleware");
 const verify = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const authHeader = req.headers.authorization;
-    console.log(req.headers);
     // Check for the presence of the Authorization header
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return next(new error_middleware_1.UnauthorizedError("Missing or invalid Authorization header"));
     }
-    const token = authHeader.split(" ")[1]; // Removed unnecessary `await`
-    console.log("Authorization header:", authHeader);
+    const token = authHeader.split(" ")[1];
     try {
         const decodedToken = jsonwebtoken_1.default.verify(token, process.env.VERIFICATION_TOKEN_SECRET);
         req.user = decodedToken.userId;

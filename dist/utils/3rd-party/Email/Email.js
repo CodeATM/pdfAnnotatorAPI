@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendInviteEmail = void 0;
+exports.sendEmailVerification = exports.sendInviteEmail = void 0;
 const Transporter_1 = require("./Transporter");
 const sendInviteEmail = (_a) => __awaiter(void 0, [_a], void 0, function* ({ receiver, firstname, lastname, }) {
     try {
@@ -29,10 +29,22 @@ const sendInviteEmail = (_a) => __awaiter(void 0, [_a], void 0, function* ({ rec
     }
 });
 exports.sendInviteEmail = sendInviteEmail;
-// // Usage example
-// sendInviteEmail({
-//   receiver: "recipient@example.com",
-//   firstname: "John",
-//   lastname: "Doe",
-// });
+const sendEmailVerification = (_a) => __awaiter(void 0, [_a], void 0, function* ({ receiver, firstname, lastname, code, }) {
+    try {
+        yield (0, Transporter_1.sendEmail)({
+            to: receiver,
+            subject: "Verify Your Email Address",
+            templateName: "verification",
+            placeholders: {
+                first_name: firstname,
+                verification_code: code,
+                year: new Date().getFullYear().toString(),
+            },
+        });
+    }
+    catch (error) {
+        console.error("❌ Failed to send verification email:", error);
+    }
+});
+exports.sendEmailVerification = sendEmailVerification;
 //# sourceMappingURL=Email.js.map

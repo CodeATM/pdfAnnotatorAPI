@@ -7,7 +7,7 @@ const CollaboratorSchema = new Schema({
 
 const PDFSchema = new Schema(
   {
-    title: { type: String, required: true },
+    title: { type: String, required: true },      
     fileUrl: { type: String, required: true },
     uploadedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
     collaborators: [CollaboratorSchema],

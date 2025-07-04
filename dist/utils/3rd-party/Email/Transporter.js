@@ -28,7 +28,7 @@ const createTransporter = () => {
     });
 };
 exports.createTransporter = createTransporter;
-// Function to load and compile an email template
+// Load and compile an email template
 const loadTemplate = (templateName, placeholders) => __awaiter(void 0, void 0, void 0, function* () {
     const filePath = path_1.default.resolve(__dirname, "templates", `${templateName}.html`);
     const templateContent = yield promises_1.default.readFile(filePath, "utf-8");
@@ -36,21 +36,23 @@ const loadTemplate = (templateName, placeholders) => __awaiter(void 0, void 0, v
     return compiledTemplate(placeholders);
 });
 exports.loadTemplate = loadTemplate;
-// Function to send an email
+// Send an email with HTML template
 const sendEmail = (_a) => __awaiter(void 0, [_a], void 0, function* ({ to, subject, templateName, placeholders, }) {
     const transporter = (0, exports.createTransporter)();
     try {
         const html = yield (0, exports.loadTemplate)(templateName, placeholders);
-        const info = yield transporter.sendMail({
+        yield transporter.sendMail({
             from: `"No Reply" <${process.env.GMAIL_USER}>`,
             to,
             subject,
             html,
+            text: `Please view this email in a modern email client to see the full content.\n\nCode: ${placeholders.verification_code || "N/A"}`,
         });
-        console.log("Email sent:", info.messageId);
+        console.log(`✅ Email sent to ${to} | Subject: "${subject}"`);
     }
     catch (error) {
-        console.error("Error sending email:", error);
+        console.error(`❌ Failed to send email to ${to} | Subject: "${subject}"`);
+        console.error("Error details:", error);
         throw error;
     }
 });

@@ -19,12 +19,12 @@ const authService_1 = require("../services/authService");
 const passportSetup_1 = __importDefault(require("../../../utils/3rd-party/passportSetup"));
 const auth_controller_2 = require("../controller/auth.controller");
 authRoutes.post("/register", auth_controller_1.register);
-// authRoutes.post("/refresh", refreshToken);
+authRoutes.post("/refresh", auth_controller_1.refreshToken);
 authRoutes.post("/login", auth_controller_1.loginUser);
 // authRoutes.post("/change-password", changePassword);
 // authRoutes.post("/request-token", getOtp);
 // authRoutes.post("/reset-password", resetPassword);
-// authRoutes.post("/activate-account", activateAccount);
+authRoutes.post("/activate-account", auth_controller_1.activateAccount);
 authRoutes.get("/google", passportSetup_1.default.authenticate("google", {
     scope: ["profile", "email"],
     session: false,

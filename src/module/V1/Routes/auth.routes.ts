@@ -1,18 +1,23 @@
 import { Router } from "express";
 import express, { Request, Response } from "express";
-import { register, loginUser } from "../controller/auth.controller";
+import {
+  register,
+  loginUser,
+  activateAccount,
+  refreshToken,
+} from "../controller/auth.controller";
 const authRoutes = Router();
 import { createJwtTokenFunc } from "../services/authService";
 import { successResponse } from "../../../utils/response";
 import passport from "../../../utils/3rd-party/passportSetup";
 import { setHttpOnlyCookie } from "../controller/auth.controller";
 authRoutes.post("/register", register);
-// authRoutes.post("/refresh", refreshToken);
+authRoutes.post("/refresh", refreshToken);
 authRoutes.post("/login", loginUser);
 // authRoutes.post("/change-password", changePassword);
 // authRoutes.post("/request-token", getOtp);
 // authRoutes.post("/reset-password", resetPassword);
-// authRoutes.post("/activate-account", activateAccount);
+authRoutes.post("/activate-account", activateAccount);
 
 authRoutes.get(
   "/google",

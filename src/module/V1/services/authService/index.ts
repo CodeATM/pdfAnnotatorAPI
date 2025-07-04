@@ -2,12 +2,14 @@ import {
   BadRequestError,
   NotFoundError,
   UnauthorizedError,
+  InternalServerError,
 } from "../../middlewares/error.middleware";
 import User from "../../models/userModel";
 import Session from "../../models/sessionModel";
 import bcrypt from "bcrypt";
 import Jwt, { SignOptions } from "jsonwebtoken";
 import crypto from "crypto";
+import { sendEmailVerification } from "../../../../utils/3rd-party/Email/Email";
 
 import { RegisterData, LoginData } from "../../../../utils/types";
 
@@ -15,7 +17,7 @@ import { RegisterData, LoginData } from "../../../../utils/types";
 export const registerService = async (registerData: RegisterData) => {
   const { firstName, lastName, password, email } = registerData;
 
-  const userExists = await User.findOne({ email: email });
+  const userExists = await User.findOne({ email });
 
   if (userExists) {
     throw new BadRequestError("User with this email already exists.");
@@ -23,14 +25,23 @@ export const registerService = async (registerData: RegisterData) => {
 
   const hashpassword = await hashpasswordFunc(password);
 
+  // 🔐 Generate code & expiration
+  const verificationCode = generateSixDigitCode(); // e.g., "123456"
+  const verificationCodeExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+
+  // ✅ Create the user
   const newUser = await User.create({
     firstName,
     lastName,
-    password: hashpassword,
     email,
+    password: hashpassword,
+    verificationCode,
+    verificationCodeExpiresAt,
   });
 
   const userId = newUser.id;
+
+  // 🔐 Create tokens
   const accessToken = await createJwtTokenFunc({
     UserIdentity: { userId },
     expiresIn: process.env.VERIFICATION_ACCESS_TOKEN_EXP!,
@@ -41,15 +52,24 @@ export const registerService = async (registerData: RegisterData) => {
     expiresIn: process.env.VERIFICATION_REFRESH_TOKEN_EXP!,
   });
 
-  const session = await Session.create({
-    userId: newUser.id,
-    accessToken: accessToken,
-    refreshToken: refreshToken,
+  // 💾 Save tokens to session
+  await Session.create({
+    userId,
+    accessToken,
+    refreshToken,
     accessTokenExpiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000),
     refreshTokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   });
 
-  return { accessToken, refreshToken, userId };
+  // ✉️ Send email with the code
+  await sendEmailVerification({
+    receiver: email,
+    firstname: firstName,
+    lastname: lastName,
+    code: verificationCode,
+  });
+
+  return { userId };
 };
 
 export const loginService = async ({ email, password }: LoginData) => {
@@ -83,9 +103,59 @@ export const loginService = async ({ email, password }: LoginData) => {
   return { accessToken, refreshToken, userId };
 };
 
+export const refreshService = async ({
+  refreshToken,
+}: {
+  refreshToken: string;
+}) => {
+  try {
+    // Verify if the access token is valid
+    const decoded = Jwt.verify(
+      refreshToken,
+      process.env.VERIFICATION_TOKEN_SECRET || "defaultSecret"
+    ) as { userId: string };
+
+    if (!decoded || !decoded.userId) {
+      throw new UnauthorizedError("Invalid access token");
+    }
+
+    // Find the session in the database
+    const session = await Session.findOne({ refreshToken });
+    if (!session) {
+      throw new UnauthorizedError("Session not found");
+    }
+
+    // Find the user associated with the session
+    const user = await User.findById(session.userId);
+    if (!user) {
+      throw new UnauthorizedError("User not found");
+    }
+
+    // Generate a new access token
+    const newAccessToken = Jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.VERIFICATION_TOKEN_SECRET || "defaultSecret",
+      { expiresIn: "15m" }
+    );
+
+    session.accessToken = newAccessToken;
+    await session.save();
+
+    // Return both new tokens
+    return newAccessToken;
+  } catch (error) {
+    console.error("Error refreshing tokens:", error);
+    throw new InternalServerError("Unable to refresh tokens");
+  }
+};
+
 // // Utility Functions
 const hashpasswordFunc = async (password: string) => {
   return await bcrypt.hash(password, 12);
+};
+
+export const generateSixDigitCode = (): string => {
+  return Math.floor(100000 + Math.random() * 900000).toString(); // ensures 6-digit number
 };
 
 export const createJwtTokenFunc = async ({
@@ -116,4 +186,39 @@ const comparePasswordFunc = async (
   hashedPassword: string
 ) => {
   return await bcrypt.compare(plaintextPassword, hashedPassword);
+};
+
+export const verifyUserService = async (token: string) => {
+  if (!token) {
+    throw new BadRequestError("Activation Token missing.");
+  }
+
+  const user = await User.findOne({ verificationCode: token });
+
+  if (!user) {
+    throw new NotFoundError("User not found or token is invalid.");
+  }
+
+  await User.updateOne(
+    { verificationCode: token },
+    { isEmailVerified: true, verificationCode: null }
+  );
+
+  const userId = user.id;
+  const accessToken = await createJwtTokenFunc({
+    UserIdentity: { userId },
+    expiresIn: process.env.VERIFICATION_ACCESS_TOKEN_EXP!,
+  });
+
+  const refreshToken = await createJwtTokenFunc({
+    UserIdentity: { userId },
+    expiresIn: process.env.VERIFICATION_REFRESH_TOKEN_EXP!,
+  });
+
+  const sessionUpdate = await Session.updateOne(
+    { userId },
+    { accessToken, refreshToken },
+    { upsert: true }
+  );
+  return { accessToken, refreshToken, userId };
 };

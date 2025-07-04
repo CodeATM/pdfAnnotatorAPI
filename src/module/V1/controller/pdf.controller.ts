@@ -4,6 +4,7 @@ import {
   savePDFToDatabase,
   getUserPdfService,
   requestAccessService,
+  getSinglePDFService,
 } from "../services/pdfService";
 import {
   BadRequestError,
@@ -70,4 +71,19 @@ export const getUserPdf = async (
   }
 };
 
+export const getSingleFile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user;
+    const { fileId } = req.params;
 
+    const data = await getSinglePDFService({ fileId, userId });
+    await successResponse(res, 200, "File fetched successfully", data);
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+};

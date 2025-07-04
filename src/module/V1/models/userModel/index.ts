@@ -12,6 +12,9 @@ export interface IUser extends Document {
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
+  verificationCode: string;
+  verificationCodeExpiresAt: Date;
+  isEmailVerified: boolean;
 }
 
 // Define the User Schema
@@ -46,11 +49,23 @@ const UserSchema: Schema<IUser> = new Schema<IUser>(
       type: String,
       minlength: [6, "Password must be at least 6 characters long"],
     },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationCode: {
+      type: String,
+      required: false,
+    },
+    verificationCodeExpiresAt: {
+      type: Date,
+      required: false,
+    },
   },
   {
-    timestamps: true, 
+    timestamps: true,
   }
-);  
+);
 
 // Export the Model
 const User: Model<IUser> = mongoose.model<IUser>("User", UserSchema);

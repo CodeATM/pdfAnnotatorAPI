@@ -59,20 +59,28 @@ export async function uploadPDFToCloudinary(
     throw new InternalServerError("Unable to upload PDF");
   }
 }
+
 export async function savePDFToDatabase(
   title: string,
   fileUrl: string,
   owner: string,
-  size: Number
+  size: number
 ): Promise<any> {
   try {
     const value = await generateUniqueFileCode();
+
     const pdf = new PdfModel({
       title,
       fileUrl,
       uploadedBy: owner,
       size,
       fileId: value,
+      collaborators: [
+        {
+          userId: owner,
+          role: "editor",
+        },
+      ],
     });
 
     const savedPdf = await pdf.save();
@@ -84,10 +92,36 @@ export async function savePDFToDatabase(
 
 export async function getUserPdfService(userId: any): Promise<any> {
   try {
-    const pdfs = await PdfModel.find({ uploadedBy: userId });
+    const pdfs = await PdfModel.find({ uploadedBy: userId }).populate(
+      "uploadedBy",
+      "firstName lastName email avatar"
+    );
     return pdfs;
   } catch (error) {
-    throw new InternalServerError("Unable to save PDF");
+    throw new InternalServerError("Unable to retrieve PDFs");
+  }
+}
+
+export async function getSinglePDFService({
+  fileId,
+  userId,
+}: {
+  fileId: string;
+  userId: any;
+}): Promise<any> {
+  try {
+    const pdf = await PdfModel.findOne({ fileId });
+    if (!pdf) {
+      throw new NotFoundError("File not found.");
+    }
+
+    if (pdf.uploadedBy.toString() !== userId.toString()) {
+      throw new UnauthorizedError("You do not have access to this file.");
+    }
+
+    return pdf;
+  } catch (error) {
+    throw error;
   }
 }
 

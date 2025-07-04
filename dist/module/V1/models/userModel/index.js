@@ -65,6 +65,18 @@ const UserSchema = new mongoose_1.Schema({
         type: String,
         minlength: [6, "Password must be at least 6 characters long"],
     },
+    isEmailVerified: {
+        type: Boolean,
+        default: false,
+    },
+    verificationCode: {
+        type: String,
+        required: false,
+    },
+    verificationCodeExpiresAt: {
+        type: Date,
+        required: false,
+    },
 }, {
     timestamps: true,
 });

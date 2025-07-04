@@ -14,7 +14,7 @@ export const createTransporter = (): Transporter => {
   });
 };
 
-// Function to load and compile an email template
+// Load and compile an email template
 export const loadTemplate = async (
   templateName: string,
   placeholders: Record<string, string>
@@ -25,7 +25,7 @@ export const loadTemplate = async (
   return compiledTemplate(placeholders);
 };
 
-// Function to send an email
+// Send an email with HTML template
 export const sendEmail = async ({
   to,
   subject,
@@ -42,16 +42,20 @@ export const sendEmail = async ({
   try {
     const html = await loadTemplate(templateName, placeholders);
 
-    const info = await transporter.sendMail({
+    await transporter.sendMail({
       from: `"No Reply" <${process.env.GMAIL_USER}>`,
       to,
       subject,
       html,
+      text: `Please view this email in a modern email client to see the full content.\n\nCode: ${
+        placeholders.verification_code || "N/A"
+      }`,
     });
 
-    console.log("Email sent:", info.messageId);
+    console.log(`✅ Email sent to ${to} | Subject: "${subject}"`);
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error(`❌ Failed to send email to ${to} | Subject: "${subject}"`);
+    console.error("Error details:", error);
     throw error;
   }
 };

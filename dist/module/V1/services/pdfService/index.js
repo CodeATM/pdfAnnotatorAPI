@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.uploadPDFToCloudinary = uploadPDFToCloudinary;
 exports.savePDFToDatabase = savePDFToDatabase;
 exports.getUserPdfService = getUserPdfService;
+exports.getSinglePDFService = getSinglePDFService;
 exports.requestAccessService = requestAccessService;
 exports.processAccessService = processAccessService;
 const cloudinary_1 = __importDefault(require("../../../../utils/3rd-party/cloudinary"));
@@ -78,6 +79,12 @@ function savePDFToDatabase(title, fileUrl, owner, size) {
                 uploadedBy: owner,
                 size,
                 fileId: value,
+                collaborators: [
+                    {
+                        userId: owner,
+                        role: "editor",
+                    },
+                ],
             });
             const savedPdf = yield pdf.save();
             return savedPdf;
@@ -90,11 +97,28 @@ function savePDFToDatabase(title, fileUrl, owner, size) {
 function getUserPdfService(userId) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const pdfs = yield PdfModel_1.default.find({ uploadedBy: userId });
+            const pdfs = yield PdfModel_1.default.find({ uploadedBy: userId }).populate("uploadedBy", "firstName lastName email avatar");
             return pdfs;
         }
         catch (error) {
-            throw new error_middleware_1.InternalServerError("Unable to save PDF");
+            throw new error_middleware_1.InternalServerError("Unable to retrieve PDFs");
+        }
+    });
+}
+function getSinglePDFService(_a) {
+    return __awaiter(this, arguments, void 0, function* ({ fileId, userId, }) {
+        try {
+            const pdf = yield PdfModel_1.default.findOne({ fileId });
+            if (!pdf) {
+                throw new error_middleware_1.NotFoundError("File not found.");
+            }
+            if (pdf.uploadedBy.toString() !== userId.toString()) {
+                throw new error_middleware_1.UnauthorizedError("You do not have access to this file.");
+            }
+            return pdf;
+        }
+        catch (error) {
+            throw error;
         }
     });
 }

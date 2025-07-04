@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loginUser = exports.register = void 0;
+exports.refreshToken = exports.activateAccount = exports.loginUser = exports.register = void 0;
 exports.setHttpOnlyCookie = setHttpOnlyCookie;
 const error_middleware_1 = require("../middlewares/error.middleware");
 const authService_1 = require("../services/authService");
@@ -28,8 +28,6 @@ const register = (req, res, next) => __awaiter(void 0, void 0, void 0, function*
         const { firstName, lastName, password, email } = req.body;
         const registerData = { firstName, lastName, password, email };
         const data = yield (0, authService_1.registerService)(registerData);
-        setHttpOnlyCookie(res, "accessToken", data.accessToken, 15 * 60 * 1000);
-        setHttpOnlyCookie(res, "refreshToken", data.refreshToken, 7 * 24 * 60 * 60 * 1000);
         yield (0, response_1.successResponse)(res, 200, "Activation code sent to your mail", data);
     }
     catch (error) {
@@ -57,42 +55,38 @@ const loginUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function
 exports.loginUser = loginUser;
 // ==========================================================
 // ==========================================================
-// export const activateAccount = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ): Promise<void> => {
-//   try {
-//     const { token } = req.query as { token?: string };
-//     if (!token) {
-//       throw new BadRequestError("Activation Token missing.");
-//     }
-//     const data = await verifyUserService(token);
-//     await successResponse(res, 200, "Verification Successful", data);
-//   } catch (error) {
-//     console.error(error);
-//     next(error);
-//   }
-// };
-// export const refreshToken = async (
-//   req: Request<{}, {}, RefreshTokenRequestBody>,
-//   res: Response,
-//   next: NextFunction
-// ): Promise<void> => {
-//   try {
-//     const { refreshToken } = req.body;
-//     if (!refreshToken) {
-//       throw new BadRequestError("Missing refresh Token");
-//     }
-//     const newAccessToken = await refreshService(refreshToken);
-//     await successResponse(res, 200, "Refresh Access Token Successfully.", {
-//       accessToken: newAccessToken,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     next(error);
-//   }
-// };
+const activateAccount = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { token } = req.body;
+        if (!token) {
+            throw new error_middleware_1.BadRequestError("Activation Token missing.");
+        }
+        const data = yield (0, authService_1.verifyUserService)(token);
+        yield (0, response_1.successResponse)(res, 200, "Verification Successful", data);
+    }
+    catch (error) {
+        console.error(error);
+        next(error);
+    }
+});
+exports.activateAccount = activateAccount;
+const refreshToken = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { refreshToken } = req.body;
+        if (!refreshToken) {
+            throw new error_middleware_1.BadRequestError("Missing refresh Token");
+        }
+        const newAccessToken = yield (0, authService_1.refreshService)({ refreshToken });
+        yield (0, response_1.successResponse)(res, 200, "Refresh Access Token Successfully.", {
+            accessToken: newAccessToken,
+        });
+    }
+    catch (error) {
+        console.error(error);
+        next(error);
+    }
+});
+exports.refreshToken = refreshToken;
 // export const changePassword = async (
 //   req: Request<{}, {}, ChangePasswordRequestBody>,
 //   res: Response,
