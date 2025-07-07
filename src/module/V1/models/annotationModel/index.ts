@@ -18,7 +18,6 @@ const AnnotationSchema = new mongoose.Schema(
     },
     content: {
       type: String,
-      required: true,
     },
     position: {
       x: { type: Number, required: true },
@@ -26,12 +25,18 @@ const AnnotationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["highlight", "comment", "drawing", "note"],
+      enum: ["highlight", "comment", "drawing", "underline"],
       default: "comment",
     },
     color: {
       type: String,
       default: "#000000",
+    },
+    width: {
+      type: Number,
+    },
+    height: {
+      type: Number,
     },
     createdAt: {
       type: Date,
