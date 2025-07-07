@@ -3,6 +3,7 @@ import {
   requestAccessService,
   processAccessService,
 } from "../services/pdfService";
+import { getAllRequestsService } from "../services/accessService";
 import { successResponse } from "../../../utils/response";
 import { CheckUser } from "../services/userService";
 
@@ -12,7 +13,7 @@ export async function requestAccess(
   next: NextFunction
 ) {
   try {
-    const { fileId } = req.body;
+    const { fileId } = req.params;
     const requesterId = req.user;
     await CheckUser(requesterId);
     const data = await requestAccessService({ fileId, requesterId });
@@ -40,5 +41,21 @@ export async function acceptAccess(
   try {
   } catch (error) {
     res.status(500).json({ message: "Error managing access request.", error });
+  }
+}
+
+export async function getAllRequests(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { fileId } = req.params;
+    const userId = req.user;
+    const requests = await getAllRequestsService({ fileId, userId });
+    await successResponse(res, 200, "Access requests retrieved.", requests);
+  } catch (error) {
+    console.error(error);
+    next(error);
   }
 }

@@ -10,6 +10,7 @@ const error_middleware_1 = require("./module/V1/middlewares/error.middleware");
 const auth_routes_1 = __importDefault(require("./module/V1/Routes/auth.routes"));
 const pdf_routes_1 = __importDefault(require("./module/V1/Routes/pdf-routes"));
 const user_routes_1 = __importDefault(require("./module/V1/Routes/user.routes"));
+const annotationsroute_1 = __importDefault(require("./module/V1/Routes/annotationsroute"));
 const app = (0, express_1.default)();
 (0, MongoDB_1.default)();
 // Middleware
@@ -33,6 +34,7 @@ app.get("/health", (req, res) => {
 app.use("/api/v1/user", user_routes_1.default);
 app.use("/api/v1/auth", auth_routes_1.default);
 app.use("/api/v1/file", pdf_routes_1.default);
+app.use("/api/v1/anon", annotationsroute_1.default);
 app.use(error_middleware_1.errorHandler);
 exports.default = app;
 //# sourceMappingURL=express.js.map

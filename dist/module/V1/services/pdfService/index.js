@@ -22,6 +22,7 @@ const cloudinary_1 = __importDefault(require("../../../../utils/3rd-party/cloudi
 const error_middleware_1 = require("../../middlewares/error.middleware");
 const PdfModel_1 = __importDefault(require("../../models/PdfModel"));
 const invitesModel_1 = require("../../models/invitesModel");
+const annotationModel_1 = __importDefault(require("../../models/annotationModel"));
 function uploadPDFToCloudinary(buffer, originalName) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -108,14 +109,31 @@ function getUserPdfService(userId) {
 function getSinglePDFService(_a) {
     return __awaiter(this, arguments, void 0, function* ({ fileId, userId, }) {
         try {
-            const pdf = yield PdfModel_1.default.findOne({ fileId });
+            const pdf = yield PdfModel_1.default.findOne({ fileId: fileId })
+                .populate({
+                path: "uploadedBy",
+                select: "firstName lastName email profilePicture",
+            })
+                .populate({
+                path: "collaborators.userId",
+                select: "firstName lastName email profilePicture",
+            });
             if (!pdf) {
                 throw new error_middleware_1.NotFoundError("File not found.");
             }
-            if (pdf.uploadedBy.toString() !== userId.toString()) {
+            const isOwner = pdf.uploadedBy._id.toString() === userId.toString();
+            const isCollaborator = pdf.collaborators.some((collab) => collab.userId._id.toString() === userId.toString());
+            if (!isOwner && !isCollaborator) {
                 throw new error_middleware_1.UnauthorizedError("You do not have access to this file.");
             }
-            return pdf;
+            // ✅ Fetch annotations for the file
+            const annotations = yield annotationModel_1.default.find({ fileId: pdf.id })
+                .populate({
+                path: "createdBy",
+                select: "firstName lastName email profilePicture",
+            })
+                .lean();
+            return Object.assign(Object.assign({}, pdf.toObject()), { annotations });
         }
         catch (error) {
             throw error;

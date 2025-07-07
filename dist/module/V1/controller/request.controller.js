@@ -11,13 +11,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.requestAccess = requestAccess;
 exports.acceptAccess = acceptAccess;
+exports.getAllRequests = getAllRequests;
 const pdfService_1 = require("../services/pdfService");
+const accessService_1 = require("../services/accessService");
 const response_1 = require("../../../utils/response");
 const userService_1 = require("../services/userService");
 function requestAccess(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const { fileId } = req.body;
+            const { fileId } = req.params;
             const requesterId = req.user;
             yield (0, userService_1.CheckUser)(requesterId);
             const data = yield (0, pdfService_1.requestAccessService)({ fileId, requesterId });
@@ -44,6 +46,20 @@ function acceptAccess(req, res, next) {
         }
         catch (error) {
             res.status(500).json({ message: "Error managing access request.", error });
+        }
+    });
+}
+function getAllRequests(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const { fileId } = req.params;
+            const userId = req.user;
+            const requests = yield (0, accessService_1.getAllRequestsService)({ fileId, userId });
+            yield (0, response_1.successResponse)(res, 200, "Access requests retrieved.", requests);
+        }
+        catch (error) {
+            console.error(error);
+            next(error);
         }
     });
 }

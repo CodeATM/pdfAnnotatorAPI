@@ -1,5 +1,5 @@
 import Jwt from "jsonwebtoken";
-import { UnauthorizedError } from "./error.middleware";
+import { ForbiddenError, UnauthorizedError } from "./error.middleware";
 import { Response, Request, NextFunction } from "express";
 
 export const verify = async (
@@ -11,9 +11,7 @@ export const verify = async (
 
   // Check for the presence of the Authorization header
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return next(
-      new UnauthorizedError("Missing or invalid Authorization header")
-    );
+    return next(new ForbiddenError("Missing or invalid Authorization header"));
   }
 
   const token = authHeader.split(" ")[1];

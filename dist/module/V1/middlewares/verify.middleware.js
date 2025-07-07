@@ -19,7 +19,7 @@ const verify = (req, res, next) => __awaiter(void 0, void 0, void 0, function* (
     const authHeader = req.headers.authorization;
     // Check for the presence of the Authorization header
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return next(new error_middleware_1.UnauthorizedError("Missing or invalid Authorization header"));
+        return next(new error_middleware_1.ForbiddenError("Missing or invalid Authorization header"));
     }
     const token = authHeader.split(" ")[1];
     try {
