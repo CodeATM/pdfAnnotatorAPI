@@ -27,7 +27,7 @@ const getAllRequestsService = (_a) => __awaiter(void 0, [_a], void 0, function* 
         throw new error_middleware_1.UnauthorizedError("You do not have permission to view access requests for this file");
     }
     // Fetch access requests and populate user details
-    const requests = yield invitesModel_1.AccessRequest.find({ fileId }).populate("requesterId", "name email");
+    const requests = yield invitesModel_1.AccessRequest.find({ fileId }).populate("requesterId", "firstName lastName email");
     return requests;
 });
 exports.getAllRequestsService = getAllRequestsService;

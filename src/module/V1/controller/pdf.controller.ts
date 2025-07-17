@@ -45,6 +45,7 @@ export const uploadPDF = async (
       fileUrl: pdf.fileUrl,
       originalName: pdf.title,
       size: pdf.size,
+      fileId: pdf.fileId,
     };
 
     await successResponse(res, 201, "PDF uploaded successfully", data);
@@ -66,7 +67,6 @@ export const getUserPdf = async (
     const data = await getUserPdfService(user);
     await successResponse(res, 200, "PDFs fetched successfully", data);
   } catch (error) {
-    console.error(error);
     next(error);
   }
 };

@@ -7,6 +7,7 @@ import authRoutes from "./module/V1/Routes/auth.routes";
 import pdfRoutes from "./module/V1/Routes/pdf-routes";
 import userRoute from "./module/V1/Routes/user.routes";
 import annotationRoutes from "./module/V1/Routes/annotationsroute";
+import ColRouter from "./module/V1/Routes/collaborators.routes";
 const app = express();
 
 connectDB();
@@ -35,6 +36,7 @@ app.use("/api/v1/user", userRoute);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/file", pdfRoutes);
 app.use("/api/v1/anon", annotationRoutes);
+app.use("/api/v1/col", ColRouter);
 
 app.use(errorHandler);
 

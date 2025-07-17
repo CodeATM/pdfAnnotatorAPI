@@ -29,6 +29,7 @@ const uploadPDF = (req, res, next) => __awaiter(void 0, void 0, void 0, function
             fileUrl: pdf.fileUrl,
             originalName: pdf.title,
             size: pdf.size,
+            fileId: pdf.fileId,
         };
         yield (0, response_1.successResponse)(res, 201, "PDF uploaded successfully", data);
     }
@@ -42,6 +43,7 @@ const getUserPdf = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
     try {
         const user = req.user;
         yield (0, userService_1.CheckUser)(user);
+        console.log("here");
         const data = yield (0, pdfService_1.getUserPdfService)(user);
         yield (0, response_1.successResponse)(res, 200, "PDFs fetched successfully", data);
     }

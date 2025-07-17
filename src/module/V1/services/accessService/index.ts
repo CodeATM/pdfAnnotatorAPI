@@ -5,6 +5,7 @@ import {
   NotFoundError,
   UnauthorizedError,
 } from "../../middlewares/error.middleware";
+import { count } from "console";
 
 export const getAllRequestsService = async ({
   fileId,
@@ -29,8 +30,11 @@ export const getAllRequestsService = async ({
   // Fetch access requests and populate user details
   const requests = await AccessRequest.find({ fileId }).populate(
     "requesterId",
-    "name email"
+    "firstName lastName email"
   );
 
-  return requests;
+  return {
+    requests: requests,
+    count: requests.length,
+  };
 };

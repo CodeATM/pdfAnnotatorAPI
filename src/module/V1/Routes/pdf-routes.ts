@@ -15,8 +15,8 @@ import {
 const pdfRoutes = Router();
 
 pdfRoutes.post("/upload-pdf", verify, pdfUpload, uploadPDF);
+pdfRoutes.get("/files", verify, getUserPdf);
 pdfRoutes.get("/:fileId", verify, getSingleFile);
-pdfRoutes.get("/my-file", verify, getUserPdf);
 pdfRoutes.post("/request/:fileId", verify, requestAccess);
 pdfRoutes.post("/process-request/:requestId", verify, acceptAccess);
 pdfRoutes.get("/file-requests/:fileId", verify, getAllRequests);

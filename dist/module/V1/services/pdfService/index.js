@@ -98,6 +98,7 @@ function savePDFToDatabase(title, fileUrl, owner, size) {
 function getUserPdfService(userId) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
+            console.log("fetching");
             const pdfs = yield PdfModel_1.default.find({ uploadedBy: userId }).populate("uploadedBy", "firstName lastName email avatar");
             return pdfs;
         }

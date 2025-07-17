@@ -93,15 +93,21 @@ export async function savePDFToDatabase(
 
 export async function getUserPdfService(userId: any): Promise<any> {
   try {
-    const pdfs = await PdfModel.find({ uploadedBy: userId }).populate(
-      "uploadedBy",
-      "firstName lastName email avatar"
-    );
+
+    const pdfs = await PdfModel.find({ uploadedBy: userId })
+      .sort({ updatedAt: -1 })
+      .populate("uploadedBy", "firstName lastName email avatar")
+      .populate({
+        path: "collaborators.userId",
+        select: "firstName lastName email profilePicture",
+      });
+
     return pdfs;
   } catch (error) {
     throw new InternalServerError("Unable to retrieve PDFs");
   }
 }
+
 
 export async function getSinglePDFService({
   fileId,
@@ -212,8 +218,6 @@ const FileExist = async (fileId: any) => {
     throw new NotFoundError("File not found or does nor exist.");
   }
 };
-
-
 
 export async function processAccessService({
   requestId,
