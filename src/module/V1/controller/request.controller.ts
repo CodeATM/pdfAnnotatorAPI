@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import {
   requestAccessService,
-  processAccessService,
+  addCollaboratorService
 } from "../services/pdfService";
 import { getAllRequestsService } from "../services/accessService";
 import { successResponse } from "../../../utils/response";
@@ -24,23 +24,26 @@ export async function requestAccess(
   }
 }
 
-export async function acceptAccess(
+export async function acceptUserAsCollaborator(
   req: Request,
   res: Response,
   next: NextFunction
 ) {
-  const { requestId } = req.params;
-  const { action } = req.body;
-  const userId = req.user; // Assume authenticated user
-  const { message, request } = await processAccessService({
-    requestId,
-    action,
-    userId,
-  });
-  await successResponse(res, 201, message, request);
   try {
+    const { fileId } = req.params;
+    const { userId, role } = req.body;
+    const currentUserId = req.user;
+
+    const file = await addCollaboratorService({
+      fileId,
+      userIdToAdd: userId,
+      role,
+      currentUserId,
+    });
+
+    await successResponse(res, 201, "Collaborator added successfully.", file);
   } catch (error) {
-    res.status(500).json({ message: "Error managing access request.", error });
+    next(error);
   }
 }
 

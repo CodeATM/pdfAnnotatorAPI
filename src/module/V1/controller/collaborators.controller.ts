@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import {
   fetchCollaboratorsForPDF,
   updateCollaboratorRole,
+  removeCollaboratorService,
 } from "../services/collaboratorService";
 import { successResponse } from "../../../utils/response";
 import {
@@ -60,6 +61,31 @@ export const patchCollaboratorRole = async (
     });
   } catch (error: any) {
     console.error("Error updating collaborator role:", error.message);
+    next(error);
+  }
+};
+
+export const removeCollaborator = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { pdfId } = req.params;
+    const { userId } = req.body;
+    const requesterId = req.user;
+
+    if (!userId) {
+      throw new BadRequestError("userId is required");
+    }
+
+    const result = await removeCollaboratorService(pdfId, requesterId, userId);
+
+    await successResponse(res, 200, result.message, {
+      collaborators: result.collaborators,
+    });
+  } catch (error: any) {
+    console.error("Error removing collaborator:", error.message);
     next(error);
   }
 };

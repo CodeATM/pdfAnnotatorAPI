@@ -5,7 +5,6 @@ import {
   NotFoundError,
   UnauthorizedError,
 } from "../../middlewares/error.middleware";
-import { count } from "console";
 
 export const getAllRequestsService = async ({
   fileId,
@@ -20,21 +19,22 @@ export const getAllRequestsService = async ({
     throw new NotFoundError("File not found");
   }
 
-  // Ensure the requesting user is the owner or has admin rights
+  // Ensure the requesting user is the owner
   if (file.uploadedBy.toString() !== userId) {
     throw new UnauthorizedError(
       "You do not have permission to view access requests for this file"
     );
   }
 
-  // Fetch access requests and populate user details
-  const requests = await AccessRequest.find({ fileId }).populate(
-    "requesterId",
-    "firstName lastName email"
-  );
+  // Fetch only pending access requests
+  const requests = await AccessRequest.find({
+    fileId,
+    status: "pending", // Filter for pending requests only
+  }).populate("requesterId", "firstName lastName email");
 
   return {
-    requests: requests,
+    requests,
     count: requests.length,
   };
 };
+

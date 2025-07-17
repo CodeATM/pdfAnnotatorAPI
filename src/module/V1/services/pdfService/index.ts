@@ -93,8 +93,9 @@ export async function savePDFToDatabase(
 
 export async function getUserPdfService(userId: any): Promise<any> {
   try {
-
-    const pdfs = await PdfModel.find({ uploadedBy: userId })
+    const pdfs = await PdfModel.find({
+      $or: [{ uploadedBy: userId }, { "collaborators.userId": userId }],
+    })
       .sort({ updatedAt: -1 })
       .populate("uploadedBy", "firstName lastName email avatar")
       .populate({
@@ -107,7 +108,6 @@ export async function getUserPdfService(userId: any): Promise<any> {
     throw new InternalServerError("Unable to retrieve PDFs");
   }
 }
-
 
 export async function getSinglePDFService({
   fileId,
@@ -219,59 +219,52 @@ const FileExist = async (fileId: any) => {
   }
 };
 
-export async function processAccessService({
-  requestId,
-  action,
-  userId,
-}: {
-  requestId: string;
-  action: "approve" | "deny";
-  userId: any;
-}) {
-  // Fetch the access request
-  const request = await AccessRequest.findById(requestId);
-  if (!request) throw new NotFoundError("Access request not found.");
+interface AddCollaboratorInput {
+  fileId: string;
+  userIdToAdd: string;
+  role: "viewer" | "editor";
+  currentUserId: any;
+}
 
-  // Fetch the file associated with the access request
-  const file = await PdfModel.findOne({ fileId: request.fileId });
-  if (!file) throw new NotFoundError("File not found.");
+export async function addCollaboratorService({
+  fileId,
+  userIdToAdd,
+  role,
+  currentUserId,
+}: AddCollaboratorInput) {
+  const file = await PdfModel.findOne({ fileId });
 
-  // Prevent uploader from processing their own access requests
-  if (file.uploadedBy.toString() === userId) {
-    throw new UnauthorizedError("You cannot process this request.");
+  if (!file) {
+    throw new NotFoundError("File not found.");
   }
 
-  if (action === "approve") {
-    // Check if the requester is already a collaborator
-    let isCollaborator = false;
-    for (const collaborator of file.collaborators) {
-      if (collaborator.userId.toString() === request.requesterId.toString()) {
-        isCollaborator = true;
-        break;
-      }
-    }
-
-    if (!isCollaborator) {
-      // Add the requester as a collaborator with a default role
-      file.collaborators.push({
-        userId: request.requesterId,
-        role: "viewer", // or "editor", based on your logic
-      });
-      await file.save();
-    }
-
-    request.status = "approved";
-  } else if (action === "deny") {
-    request.status = "denied";
-  } else {
-    throw new BadRequestError("Invalid action specified.");
+  if (file.uploadedBy.toString() !== currentUserId) {
+    throw new UnauthorizedError("Only the uploader can add collaborators.");
   }
 
-  // Save the updated access request
-  await request.save();
+  const isAlreadyCollaborator = file.collaborators.some(
+    (collab) => collab.userId.toString() === userIdToAdd
+  );
 
-  return {
-    message: `Access request ${action}d successfully.`,
-    request,
-  };
+  if (isAlreadyCollaborator) {
+    throw new BadRequestError("User is already a collaborator.");
+  }
+
+  // Add collaborator
+  file.collaborators.push({ userId: userIdToAdd, role });
+  await file.save();
+
+  // Mark access request as approved if exists
+  const accessRequest = await AccessRequest.findOne({
+    fileId,
+    requesterId: userIdToAdd,
+    status: "pending",
+  });
+
+  if (accessRequest) {
+    accessRequest.status = "approved";
+    await accessRequest.save();
+  }
+
+  return file;
 }

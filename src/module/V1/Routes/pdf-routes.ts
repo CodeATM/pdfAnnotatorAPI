@@ -7,9 +7,9 @@ import {
 import { pdfUpload } from "../middlewares/multer";
 import { verify } from "../middlewares/verify.middleware";
 import {
-  acceptAccess,
   getAllRequests,
   requestAccess,
+  acceptUserAsCollaborator
 } from "../controller/request.controller";
 
 const pdfRoutes = Router();
@@ -18,7 +18,7 @@ pdfRoutes.post("/upload-pdf", verify, pdfUpload, uploadPDF);
 pdfRoutes.get("/files", verify, getUserPdf);
 pdfRoutes.get("/:fileId", verify, getSingleFile);
 pdfRoutes.post("/request/:fileId", verify, requestAccess);
-pdfRoutes.post("/process-request/:requestId", verify, acceptAccess);
+pdfRoutes.post("/accept/:fileId/collaborators", verify, acceptUserAsCollaborator);
 pdfRoutes.get("/file-requests/:fileId", verify, getAllRequests);
 
 export default pdfRoutes;
