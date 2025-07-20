@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.refreshToken = exports.activateAccount = exports.loginUser = exports.register = void 0;
+exports.refreshToken = exports.activateAccount = exports.googleAuthentication = exports.loginUser = exports.register = void 0;
 exports.setHttpOnlyCookie = setHttpOnlyCookie;
 const error_middleware_1 = require("../middlewares/error.middleware");
 const authService_1 = require("../services/authService");
@@ -53,8 +53,26 @@ const loginUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function
     }
 });
 exports.loginUser = loginUser;
-// ==========================================================
-// ==========================================================
+const googleAuthentication = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { email, email_verified, family_name, given_name, sub, picture } = req.body;
+        const userDetails = {
+            email,
+            email_verified,
+            first_name: given_name,
+            last_name: family_name,
+            googleId: sub,
+            profilePicture: picture,
+        };
+        const data = yield (0, authService_1.googleAuthService)(userDetails);
+        yield (0, response_1.successResponse)(res, 200, "User logged in or signed up successfully via Google.", data);
+    }
+    catch (error) {
+        console.error(error);
+        next(error);
+    }
+});
+exports.googleAuthentication = googleAuthentication;
 const activateAccount = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { token } = req.body;

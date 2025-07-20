@@ -149,6 +149,84 @@ export const refreshService = async ({
   }
 };
 
+export const googleAuthService = async (userDetails: {
+  email: string;
+  email_verified: boolean;
+  first_name: string;
+  last_name: string;
+  googleId: string;
+  profilePicture: string;
+}) => {
+  const {
+    email,
+    email_verified,
+    first_name,
+    last_name,
+    googleId,
+    profilePicture,
+  } = userDetails;
+
+  if (!email_verified) {
+    throw new UnauthorizedError("Email is not verified by Google.");
+  }
+
+  const lowerCaseEmail = email.toLowerCase();
+
+  try {
+    let user = await User.findOne({ email: lowerCaseEmail });
+
+    if (!user) {
+      const emailPrefix = lowerCaseEmail.split("@")[0];
+      const username = `${emailPrefix}_${Date.now()}`.slice(0, 30);
+
+      user = await User.create({
+        email: lowerCaseEmail,
+        password: "", // Empty since Google handles auth
+        googleId,
+        profile: {
+          create: {
+            first_name,
+            last_name,
+            username,
+            avatar: profilePicture || "",
+          },
+        },
+      });
+    }
+
+    const userId = user.id;
+
+    // === Generate Tokens ===
+    const accessToken = await createJwtTokenFunc({
+      UserIdentity: { userId },
+      expiresIn: process.env.ACCESS_TOKEN_EXP!,
+    });
+
+    const refreshToken = await createJwtTokenFunc({
+      UserIdentity: { userId },
+      expiresIn: process.env.REFRESH_TOKEN_EXP!,
+    });
+
+    const now = Date.now();
+
+    // === Upsert Session ===
+    await Session.updateOne(
+      { userId },
+      {
+        userId,
+        accessToken,
+        refreshToken,
+      },
+      { upsert: true }
+    );
+
+    return { accessToken, refreshToken, userId };
+  } catch (error) {
+    console.error("Google Auth Error:", error);
+    throw new InternalServerError("Failed to login with Google");
+  }
+};
+
 // // Utility Functions
 const hashpasswordFunc = async (password: string) => {
   return await bcrypt.hash(password, 12);

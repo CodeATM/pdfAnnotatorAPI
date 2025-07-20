@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.verifyUserService = exports.createJwtTokenFunc = exports.generateSixDigitCode = exports.refreshService = exports.loginService = exports.registerService = void 0;
+exports.verifyUserService = exports.createJwtTokenFunc = exports.generateSixDigitCode = exports.googleAuthService = exports.refreshService = exports.loginService = exports.registerService = void 0;
 const error_middleware_1 = require("../../middlewares/error.middleware");
 const userModel_1 = __importDefault(require("../../models/userModel"));
 const sessionModel_1 = __importDefault(require("../../models/sessionModel"));
@@ -119,6 +119,56 @@ const refreshService = (_a) => __awaiter(void 0, [_a], void 0, function* ({ refr
     }
 });
 exports.refreshService = refreshService;
+const googleAuthService = (userDetails) => __awaiter(void 0, void 0, void 0, function* () {
+    const { email, email_verified, first_name, last_name, googleId, profilePicture, } = userDetails;
+    if (!email_verified) {
+        throw new error_middleware_1.UnauthorizedError("Email is not verified by Google.");
+    }
+    const lowerCaseEmail = email.toLowerCase();
+    try {
+        let user = yield userModel_1.default.findOne({ email: lowerCaseEmail });
+        if (!user) {
+            const emailPrefix = lowerCaseEmail.split("@")[0];
+            const username = `${emailPrefix}_${Date.now()}`.slice(0, 30);
+            user = yield userModel_1.default.create({
+                email: lowerCaseEmail,
+                password: "", // Empty since Google handles auth
+                googleId,
+                profile: {
+                    create: {
+                        first_name,
+                        last_name,
+                        username,
+                        avatar: profilePicture || "",
+                    },
+                },
+            });
+        }
+        const userId = user.id;
+        // === Generate Tokens ===
+        const accessToken = yield (0, exports.createJwtTokenFunc)({
+            UserIdentity: { userId },
+            expiresIn: process.env.ACCESS_TOKEN_EXP,
+        });
+        const refreshToken = yield (0, exports.createJwtTokenFunc)({
+            UserIdentity: { userId },
+            expiresIn: process.env.REFRESH_TOKEN_EXP,
+        });
+        const now = Date.now();
+        // === Upsert Session ===
+        yield sessionModel_1.default.updateOne({ userId }, {
+            userId,
+            accessToken,
+            refreshToken,
+        }, { upsert: true });
+        return { accessToken, refreshToken, userId };
+    }
+    catch (error) {
+        console.error("Google Auth Error:", error);
+        throw new error_middleware_1.InternalServerError("Failed to login with Google");
+    }
+});
+exports.googleAuthService = googleAuthService;
 // // Utility Functions
 const hashpasswordFunc = (password) => __awaiter(void 0, void 0, void 0, function* () {
     return yield bcrypt_1.default.hash(password, 12);

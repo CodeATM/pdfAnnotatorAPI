@@ -17,14 +17,14 @@ const app = (0, express_1.default)();
 (0, MongoDB_1.default)();
 // Middleware
 const corsOptions = {
-    origin: true, // Allow all origins
+    origin: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     exposedHeaders: ["Content-Length", "X-Kuma-Revision"],
-    credentials: true, // Allow cookies and credentials
-    optionsSuccessStatus: 200, // For older browsers
-    preflightContinue: false, // Handle preflight requests automatically
-    maxAge: 600, // Cache preflight response for 10 minutes
+    credentials: true,
+    optionsSuccessStatus: 200,
+    preflightContinue: false,
+    maxAge: 600,
 };
 app.use((0, cors_1.default)(corsOptions));
 app.use(express_1.default.json());

@@ -5,6 +5,7 @@ import {
   loginService,
   refreshService,
   verifyUserService,
+  googleAuthService,
 } from "../services/authService";
 import { successResponse } from "../../../utils/response";
 import { RegisterRequestBody, LoginRequestBody } from "../../../utils/types";
@@ -70,9 +71,37 @@ export const loginUser = async (
   }
 };
 
-// ==========================================================
+export const googleAuthentication = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { email, email_verified, family_name, given_name, sub, picture } =
+      req.body;
 
-// ==========================================================
+    const userDetails = {
+      email,
+      email_verified,
+      first_name: given_name,
+      last_name: family_name,
+      googleId: sub,
+      profilePicture: picture,
+    };
+
+    const data = await googleAuthService(userDetails);
+
+    await successResponse(
+      res,
+      200,
+      "User logged in or signed up successfully via Google.",
+      data
+    );
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+};
 
 export const activateAccount = async (
   req: Request,
