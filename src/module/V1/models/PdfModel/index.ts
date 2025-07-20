@@ -13,6 +13,7 @@ const PDFSchema = new Schema(
     collaborators: [CollaboratorSchema],
     version: { type: Number, default: 1 },
     size: { type: Number, required: true },
+    description: { type: String, default: "" },
     views: { type: Number, default: 0 },
     downloads: { type: Number, default: 0 },
     status: {

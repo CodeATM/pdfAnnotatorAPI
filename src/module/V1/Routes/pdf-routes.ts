@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  editFile,
   getSingleFile,
   getUserPdf,
   uploadPDF,
@@ -15,6 +16,7 @@ import {
 const pdfRoutes = Router();
 
 pdfRoutes.post("/upload-pdf", verify, pdfUpload, uploadPDF);
+pdfRoutes.patch("/edit-file/:fileId", verify, editFile);
 pdfRoutes.get("/files", verify, getUserPdf);
 pdfRoutes.get("/:fileId", verify, getSingleFile);
 pdfRoutes.post("/request/:fileId", verify, requestAccess);

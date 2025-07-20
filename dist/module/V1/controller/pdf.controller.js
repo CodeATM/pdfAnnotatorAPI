@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSingleFile = exports.getUserPdf = exports.uploadPDF = void 0;
+exports.editFile = exports.getSingleFile = exports.getUserPdf = exports.uploadPDF = void 0;
 const pdfService_1 = require("../services/pdfService");
 const error_middleware_1 = require("../middlewares/error.middleware");
 const response_1 = require("../../../utils/response");
@@ -43,12 +43,10 @@ const getUserPdf = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
     try {
         const user = req.user;
         yield (0, userService_1.CheckUser)(user);
-        console.log("here");
         const data = yield (0, pdfService_1.getUserPdfService)(user);
         yield (0, response_1.successResponse)(res, 200, "PDFs fetched successfully", data);
     }
     catch (error) {
-        console.error(error);
         next(error);
     }
 });
@@ -66,4 +64,18 @@ const getSingleFile = (req, res, next) => __awaiter(void 0, void 0, void 0, func
     }
 });
 exports.getSingleFile = getSingleFile;
+const editFile = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const userId = req.user;
+        const { fileId } = req.params;
+        const updateData = req.body;
+        const data = yield (0, pdfService_1.editPDFService)({ fileId, userId, updateData });
+        yield (0, response_1.successResponse)(res, 200, "File updated successfully", data);
+    }
+    catch (error) {
+        console.error(error);
+        next(error);
+    }
+});
+exports.editFile = editFile;
 //# sourceMappingURL=pdf.controller.js.map

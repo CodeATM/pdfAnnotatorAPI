@@ -15,6 +15,7 @@ export interface IUser extends Document {
   verificationCode: string;
   verificationCodeExpiresAt: Date;
   isEmailVerified: boolean;
+  favoriteFiles: mongoose.Types.ObjectId[]; // <-- Add this
 }
 
 // Define the User Schema
@@ -61,6 +62,12 @@ const UserSchema: Schema<IUser> = new Schema<IUser>(
       type: Date,
       required: false,
     },
+    favoriteFiles: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "PDF",
+      },
+    ],
   },
   {
     timestamps: true,

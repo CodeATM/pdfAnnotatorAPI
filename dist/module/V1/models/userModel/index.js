@@ -77,6 +77,12 @@ const UserSchema = new mongoose_1.Schema({
         type: Date,
         required: false,
     },
+    favoriteFiles: [
+        {
+            type: mongoose_1.default.Schema.Types.ObjectId,
+            ref: "PDF",
+        },
+    ],
 }, {
     timestamps: true,
 });

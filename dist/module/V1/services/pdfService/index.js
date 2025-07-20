@@ -12,17 +12,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.editPDFService = void 0;
 exports.uploadPDFToCloudinary = uploadPDFToCloudinary;
 exports.savePDFToDatabase = savePDFToDatabase;
 exports.getUserPdfService = getUserPdfService;
 exports.getSinglePDFService = getSinglePDFService;
 exports.requestAccessService = requestAccessService;
-exports.processAccessService = processAccessService;
+exports.addCollaboratorService = addCollaboratorService;
+exports.updateCollaboratorRole = updateCollaboratorRole;
 const cloudinary_1 = __importDefault(require("../../../../utils/3rd-party/cloudinary"));
 const error_middleware_1 = require("../../middlewares/error.middleware");
 const PdfModel_1 = __importDefault(require("../../models/PdfModel"));
 const invitesModel_1 = require("../../models/invitesModel");
 const annotationModel_1 = __importDefault(require("../../models/annotationModel"));
+const userModel_1 = __importDefault(require("../../models/userModel"));
 function uploadPDFToCloudinary(buffer, originalName) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -98,9 +101,25 @@ function savePDFToDatabase(title, fileUrl, owner, size) {
 function getUserPdfService(userId) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            console.log("fetching");
-            const pdfs = yield PdfModel_1.default.find({ uploadedBy: userId }).populate("uploadedBy", "firstName lastName email avatar");
-            return pdfs;
+            // Step 1: Fetch user's PDFs (uploaded or collaborated on)
+            const pdfs = yield PdfModel_1.default.find({
+                $or: [{ uploadedBy: userId }, { "collaborators.userId": userId }],
+            })
+                .sort({ updatedAt: -1 })
+                .populate("uploadedBy", "firstName lastName email avatar")
+                .populate({
+                path: "collaborators.userId",
+                select: "firstName lastName email profilePicture",
+            });
+            // Step 2: Fetch user's favorite file ObjectIds
+            const user = yield userModel_1.default.findById(userId).select("favoriteFiles").lean();
+            const favoriteIds = (user === null || user === void 0 ? void 0 : user.favoriteFiles.map((id) => id.toString())) || [];
+            // Step 3: Add isFavorite flag to each PDF
+            const pdfsWithFavoriteFlag = pdfs.map((pdf) => {
+                const isFavorite = favoriteIds.includes(pdf._id.toString());
+                return Object.assign(Object.assign({}, pdf.toObject()), { isFavorite });
+            });
+            return pdfsWithFavoriteFlag;
         }
         catch (error) {
             throw new error_middleware_1.InternalServerError("Unable to retrieve PDFs");
@@ -192,51 +211,82 @@ const FileExist = (fileId) => __awaiter(void 0, void 0, void 0, function* () {
         throw new error_middleware_1.NotFoundError("File not found or does nor exist.");
     }
 });
-function processAccessService(_a) {
-    return __awaiter(this, arguments, void 0, function* ({ requestId, action, userId, }) {
-        // Fetch the access request
-        const request = yield invitesModel_1.AccessRequest.findById(requestId);
-        if (!request)
-            throw new error_middleware_1.NotFoundError("Access request not found.");
-        // Fetch the file associated with the access request
-        const file = yield PdfModel_1.default.findOne({ fileId: request.fileId });
-        if (!file)
+function addCollaboratorService(_a) {
+    return __awaiter(this, arguments, void 0, function* ({ fileId, userIdToAdd, role, currentUserId, }) {
+        const file = yield PdfModel_1.default.findOne({ fileId });
+        if (!file) {
             throw new error_middleware_1.NotFoundError("File not found.");
-        // Prevent uploader from processing their own access requests
-        if (file.uploadedBy.toString() === userId) {
-            throw new error_middleware_1.UnauthorizedError("You cannot process this request.");
         }
-        if (action === "approve") {
-            // Check if the requester is already a collaborator
-            let isCollaborator = false;
-            for (const collaborator of file.collaborators) {
-                if (collaborator.userId.toString() === request.requesterId.toString()) {
-                    isCollaborator = true;
-                    break;
-                }
-            }
-            if (!isCollaborator) {
-                // Add the requester as a collaborator with a default role
-                file.collaborators.push({
-                    userId: request.requesterId,
-                    role: "viewer", // or "editor", based on your logic
-                });
-                yield file.save();
-            }
-            request.status = "approved";
+        if (file.uploadedBy.toString() !== currentUserId) {
+            throw new error_middleware_1.UnauthorizedError("Only the uploader can add collaborators.");
         }
-        else if (action === "deny") {
-            request.status = "denied";
+        const isAlreadyCollaborator = file.collaborators.some((collab) => collab.userId.toString() === userIdToAdd);
+        if (isAlreadyCollaborator) {
+            throw new error_middleware_1.BadRequestError("User is already a collaborator.");
         }
-        else {
-            throw new error_middleware_1.BadRequestError("Invalid action specified.");
+        // Add collaborator
+        file.collaborators.push({ userId: userIdToAdd, role });
+        yield file.save();
+        // Mark access request as approved if exists
+        const accessRequest = yield invitesModel_1.AccessRequest.findOne({
+            fileId,
+            requesterId: userIdToAdd,
+            status: "pending",
+        });
+        if (accessRequest) {
+            accessRequest.status = "approved";
+            yield accessRequest.save();
         }
-        // Save the updated access request
-        yield request.save();
+        return file;
+    });
+}
+function updateCollaboratorRole(pdfId, requesterId, userId, role) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const pdf = yield PdfModel_1.default.findOne({ fileId: pdfId }).populate("collaborators.userId", "firstName lastName email avatar");
+        if (!pdf)
+            throw new error_middleware_1.NotFoundError("File not found.");
+        if (!pdf.uploadedBy.equals(requesterId)) {
+            throw new Error("You are not authorized to update this PDF's collaborators");
+        }
+        const collaborator = pdf.collaborators.find((collab) => collab.userId._id.equals(userId));
+        if (!collaborator)
+            throw new Error("Collaborator not found");
+        if (collaborator.role === role) {
+            return {
+                message: "Role is already set to the specified value",
+                collaborators: pdf.collaborators,
+            };
+        }
+        collaborator.role = role;
+        yield pdf.save();
         return {
-            message: `Access request ${action}d successfully.`,
-            request,
+            message: "Collaborator role updated successfully",
+            collaborators: pdf.collaborators,
         };
     });
 }
+const editPDFService = (_a) => __awaiter(void 0, [_a], void 0, function* ({ fileId, userId, updateData }) {
+    const pdf = yield PdfModel_1.default.findOne({ fileId });
+    if (!pdf) {
+        throw new error_middleware_1.NotFoundError("File not found.");
+    }
+    const isUploader = pdf.uploadedBy.toString() === userId;
+    const isEditorCollaborator = pdf.collaborators.some((c) => c.userId.toString() === userId && c.role === "editor");
+    if (!isUploader && !isEditorCollaborator) {
+        throw new error_middleware_1.UnauthorizedError("You are not allowed to edit this file.");
+    }
+    const { title, description } = updateData;
+    if (!title && !description) {
+        throw new error_middleware_1.BadRequestError("At least one of title or description must be provided.");
+    }
+    if (title)
+        pdf.title = title;
+    if (description)
+        pdf.description = description;
+    pdf.lastEditedBy = userId;
+    pdf.lastEditedAt = new Date();
+    yield pdf.save();
+    return pdf;
+});
+exports.editPDFService = editPDFService;
 //# sourceMappingURL=index.js.map

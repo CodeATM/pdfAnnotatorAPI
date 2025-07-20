@@ -8,6 +8,7 @@ import {
 import PdfModel from "../../models/PdfModel";
 import { AccessRequest } from "../../models/invitesModel";
 import AnnotationModel from "../../models/annotationModel";
+import User from "../../models/userModel";
 
 export async function uploadPDFToCloudinary(
   buffer: Buffer,
@@ -93,6 +94,7 @@ export async function savePDFToDatabase(
 
 export async function getUserPdfService(userId: any): Promise<any> {
   try {
+    // Step 1: Fetch user's PDFs (uploaded or collaborated on)
     const pdfs = await PdfModel.find({
       $or: [{ uploadedBy: userId }, { "collaborators.userId": userId }],
     })
@@ -103,7 +105,20 @@ export async function getUserPdfService(userId: any): Promise<any> {
         select: "firstName lastName email profilePicture",
       });
 
-    return pdfs;
+    // Step 2: Fetch user's favorite file ObjectIds
+    const user = await User.findById(userId).select("favoriteFiles").lean();
+    const favoriteIds = user?.favoriteFiles.map((id) => id.toString()) || [];
+
+    // Step 3: Add isFavorite flag to each PDF
+    const pdfsWithFavoriteFlag = pdfs.map((pdf) => {
+      const isFavorite = favoriteIds.includes(pdf._id.toString());
+      return {
+        ...pdf.toObject(),
+        isFavorite,
+      };
+    });
+
+    return pdfsWithFavoriteFlag;
   } catch (error) {
     throw new InternalServerError("Unable to retrieve PDFs");
   }
@@ -268,3 +283,79 @@ export async function addCollaboratorService({
 
   return file;
 }
+
+export async function updateCollaboratorRole(
+  pdfId: string,
+  requesterId: any,
+  userId: string,
+  role: "viewer" | "editor"
+) {
+  const pdf = await PdfModel.findOne({ fileId: pdfId }).populate(
+    "collaborators.userId",
+    "firstName lastName email avatar"
+  );
+
+  if (!pdf) throw new NotFoundError("File not found.");
+
+  if (!pdf.uploadedBy.equals(requesterId)) {
+    throw new Error(
+      "You are not authorized to update this PDF's collaborators"
+    );
+  }
+
+  const collaborator = pdf.collaborators.find((collab: any) =>
+    collab.userId._id.equals(userId)
+  );
+
+  if (!collaborator) throw new Error("Collaborator not found");
+
+  if (collaborator.role === role) {
+    return {
+      message: "Role is already set to the specified value",
+      collaborators: pdf.collaborators,
+    };
+  }
+
+  collaborator.role = role;
+  await pdf.save();
+
+  return {
+    message: "Collaborator role updated successfully",
+    collaborators: pdf.collaborators,
+  };
+}
+
+export const editPDFService = async ({ fileId, userId, updateData }: any) => {
+  const pdf = await PdfModel.findOne({ fileId });
+
+  if (!pdf) {
+    throw new NotFoundError("File not found.");
+  }
+  const isUploader = pdf.uploadedBy.toString() === userId;
+
+  const isEditorCollaborator = pdf.collaborators.some(
+    (c: any) => c.userId.toString() === userId && c.role === "editor"
+  );
+
+  if (!isUploader && !isEditorCollaborator) {
+    throw new UnauthorizedError("You are not allowed to edit this file.");
+  }
+
+  const { title, description } = updateData;
+
+  if (!title && !description) {
+    throw new BadRequestError(
+      "At least one of title or description must be provided."
+    );
+  }
+
+  if (title) pdf.title = title;
+  if (description) pdf.description = description;
+
+  pdf.lastEditedBy = userId;
+  pdf.lastEditedAt = new Date();
+
+  await pdf.save();
+
+  return pdf;
+};

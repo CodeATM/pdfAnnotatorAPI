@@ -22,13 +22,19 @@ const getAllRequestsService = (_a) => __awaiter(void 0, [_a], void 0, function* 
     if (!file) {
         throw new error_middleware_1.NotFoundError("File not found");
     }
-    // Ensure the requesting user is the owner or has admin rights
+    // Ensure the requesting user is the owner
     if (file.uploadedBy.toString() !== userId) {
         throw new error_middleware_1.UnauthorizedError("You do not have permission to view access requests for this file");
     }
-    // Fetch access requests and populate user details
-    const requests = yield invitesModel_1.AccessRequest.find({ fileId }).populate("requesterId", "firstName lastName email");
-    return requests;
+    // Fetch only pending access requests
+    const requests = yield invitesModel_1.AccessRequest.find({
+        fileId,
+        status: "pending", // Filter for pending requests only
+    }).populate("requesterId", "firstName lastName email");
+    return {
+        requests,
+        count: requests.length,
+    };
 });
 exports.getAllRequestsService = getAllRequestsService;
 //# sourceMappingURL=index.js.map

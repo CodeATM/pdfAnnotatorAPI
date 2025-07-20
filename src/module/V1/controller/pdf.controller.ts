@@ -5,6 +5,7 @@ import {
   getUserPdfService,
   requestAccessService,
   getSinglePDFService,
+  editPDFService
 } from "../services/pdfService";
 import {
   BadRequestError,
@@ -82,6 +83,24 @@ export const getSingleFile = async (
 
     const data = await getSinglePDFService({ fileId, userId });
     await successResponse(res, 200, "File fetched successfully", data);
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+};
+
+export const editFile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user;
+    const { fileId } = req.params;
+    const updateData = req.body;
+
+    const data = await editPDFService({ fileId, userId, updateData });
+    await successResponse(res, 200, "File updated successfully", data);
   } catch (error) {
     console.error(error);
     next(error);

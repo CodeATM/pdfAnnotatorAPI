@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.requestAccess = requestAccess;
-exports.acceptAccess = acceptAccess;
+exports.acceptUserAsCollaborator = acceptUserAsCollaborator;
 exports.getAllRequests = getAllRequests;
 const pdfService_1 = require("../services/pdfService");
 const accessService_1 = require("../services/accessService");
@@ -31,21 +31,22 @@ function requestAccess(req, res, next) {
         }
     });
 }
-function acceptAccess(req, res, next) {
+function acceptUserAsCollaborator(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { requestId } = req.params;
-        const { action } = req.body;
-        const userId = req.user; // Assume authenticated user
-        const { message, request } = yield (0, pdfService_1.processAccessService)({
-            requestId,
-            action,
-            userId,
-        });
-        yield (0, response_1.successResponse)(res, 201, message, request);
         try {
+            const { fileId } = req.params;
+            const { userId, role } = req.body;
+            const currentUserId = req.user;
+            const file = yield (0, pdfService_1.addCollaboratorService)({
+                fileId,
+                userIdToAdd: userId,
+                role,
+                currentUserId,
+            });
+            yield (0, response_1.successResponse)(res, 201, "Collaborator added successfully.", file);
         }
         catch (error) {
-            res.status(500).json({ message: "Error managing access request.", error });
+            next(error);
         }
     });
 }
