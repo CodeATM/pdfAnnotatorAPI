@@ -94,7 +94,7 @@ export const googleAuthentication = async (
     await successResponse(
       res,
       200,
-      "User logged in or signed up successfully via Google.",
+      "User Signed in Successfully",
       data
     );
   } catch (error) {

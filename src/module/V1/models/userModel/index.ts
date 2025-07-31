@@ -1,12 +1,12 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 import bcrypt from "bcrypt";
 
-// Define the User Interface
+type UsageType = "Personal" | "Work" | "Academics" | "Other";
 export interface IUser extends Document {
   firstName: string;
   lastName: string;
   gender: "Male" | "Female" | "Other";
-  role: "Personal" | "Business" | "Academics";
+  usage: UsageType[];
   email: string;
   password: string;
   createdAt: Date;
@@ -15,7 +15,9 @@ export interface IUser extends Document {
   verificationCode: string;
   verificationCodeExpiresAt: Date;
   isEmailVerified: boolean;
-  favoriteFiles: mongoose.Types.ObjectId[]; // <-- Add this
+  favoriteFiles: mongoose.Types.ObjectId[];
+  username: string;
+  avatar?: string;
 }
 
 // Define the User Schema
@@ -33,10 +35,11 @@ const UserSchema: Schema<IUser> = new Schema<IUser>(
       type: String,
       enum: ["Male", "Female", "Other"],
     },
-    role: {
-      type: String,
-      enum: ["Personal", "Business", "Academics"],
-      default: "Personal",
+    usage: {
+      type: [String],
+      enum: ["Personal", "Work", "Academics", "Other"],
+      default: ["Personal"],
+      required: true,
     },
     email: {
       type: String,
@@ -48,7 +51,7 @@ const UserSchema: Schema<IUser> = new Schema<IUser>(
     },
     password: {
       type: String,
-      minlength: [6, "Password must be at least 6 characters long"],
+      // minlength: [6, "Password must be at least 6 characters long"],
     },
     isEmailVerified: {
       type: Boolean,
@@ -68,6 +71,11 @@ const UserSchema: Schema<IUser> = new Schema<IUser>(
         ref: "PDF",
       },
     ],
+    username: { type: String, required: true, unique: true, lowercase: true },
+    avatar: {
+      type: String,
+      required: false,
+    },
   },
   {
     timestamps: true,

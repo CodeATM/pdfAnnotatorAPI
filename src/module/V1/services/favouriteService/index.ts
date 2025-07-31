@@ -33,7 +33,7 @@ export const getFavoritesService = async (userId: string, count?: number) => {
   let favorites = user.favoriteFiles as any[];
 
   if (count && !isNaN(count)) {
-    favorites = favorites.slice(0, count);
+    favorites = favorites?.slice(0, count);
   }
 
   return favorites;

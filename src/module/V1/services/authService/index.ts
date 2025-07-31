@@ -28,6 +28,7 @@ export const registerService = async (registerData: RegisterData) => {
   // 🔐 Generate code & expiration
   const verificationCode = generateSixDigitCode(); // e.g., "123456"
   const verificationCodeExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+  const username = await generateUniqueUsername(firstName, lastName);
 
   // ✅ Create the user
   const newUser = await User.create({
@@ -37,6 +38,7 @@ export const registerService = async (registerData: RegisterData) => {
     password: hashpassword,
     verificationCode,
     verificationCodeExpiresAt,
+    username,
   });
 
   const userId = newUser.id;
@@ -176,22 +178,40 @@ export const googleAuthService = async (userDetails: {
     let user = await User.findOne({ email: lowerCaseEmail });
 
     if (!user) {
-      const emailPrefix = lowerCaseEmail.split("@")[0];
-      const username = `${emailPrefix}_${Date.now()}`.slice(0, 30);
+      const username = await generateUniqueUsername(first_name, last_name);
 
       user = await User.create({
         email: lowerCaseEmail,
-        password: "", // Empty since Google handles auth
+        password: "",
         googleId,
-        profile: {
-          create: {
-            first_name,
-            last_name,
-            username,
-            avatar: profilePicture || "",
-          },
-        },
+        firstName: first_name,
+        lastName: last_name,
+        username,
+        avatar: profilePicture || "",
       });
+    } else {
+      const updateFields: Partial<typeof user> = {};
+
+      if (!user.username) {
+        updateFields.username = await generateUniqueUsername(
+          first_name,
+          last_name
+        );
+      }
+      if (!user.firstName) {
+        updateFields.firstName = first_name;
+      }
+      if (!user.lastName) {
+        updateFields.lastName = last_name;
+      }
+      if (!user.avatar && profilePicture) {
+        updateFields.avatar = profilePicture;
+      }
+
+      if (Object.keys(updateFields).length > 0) {
+        await User.updateOne({ _id: user._id }, { $set: updateFields });
+        Object.assign(user, updateFields);
+      }
     }
 
     const userId = user.id;
@@ -199,24 +219,18 @@ export const googleAuthService = async (userDetails: {
     // === Generate Tokens ===
     const accessToken = await createJwtTokenFunc({
       UserIdentity: { userId },
-      expiresIn: process.env.ACCESS_TOKEN_EXP!,
+      expiresIn: process.env.VERIFICATION_ACCESS_TOKEN_EXP!,
     });
 
     const refreshToken = await createJwtTokenFunc({
       UserIdentity: { userId },
-      expiresIn: process.env.REFRESH_TOKEN_EXP!,
+      expiresIn: process.env.VERIFICATION_REFRESH_TOKEN_EXP!,
     });
-
-    const now = Date.now();
 
     // === Upsert Session ===
     await Session.updateOne(
       { userId },
-      {
-        userId,
-        accessToken,
-        refreshToken,
-      },
+      { userId, accessToken, refreshToken },
       { upsert: true }
     );
 
@@ -225,6 +239,26 @@ export const googleAuthService = async (userDetails: {
     console.error("Google Auth Error:", error);
     throw new InternalServerError("Failed to login with Google");
   }
+};
+
+// add a uniqe username
+export const generateUniqueUsername = async (
+  firstName: string,
+  lastName: string
+): Promise<string> => {
+  const fn = firstName.trim().toLowerCase().slice(0, 3);
+  const ln = lastName.trim().toLowerCase().slice(-3);
+  let baseUsername = fn + ln;
+
+  let username = baseUsername;
+  let count = 1;
+
+  while (await User.exists({ username })) {
+    username = `${baseUsername}${count}`;
+    count++;
+  }
+
+  return username;
 };
 
 // // Utility Functions

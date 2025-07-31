@@ -9,6 +9,7 @@ import PdfModel from "../../models/PdfModel";
 import { AccessRequest } from "../../models/invitesModel";
 import AnnotationModel from "../../models/annotationModel";
 import User from "../../models/userModel";
+import { Comment } from "../../models/commentModel";
 
 export async function uploadPDFToCloudinary(
   buffer: Buffer,
@@ -107,10 +108,10 @@ export async function getUserPdfService(userId: any): Promise<any> {
 
     // Step 2: Fetch user's favorite file ObjectIds
     const user = await User.findById(userId).select("favoriteFiles").lean();
-    const favoriteIds = user?.favoriteFiles.map((id) => id.toString()) || [];
+    const favoriteIds = user?.favoriteFiles?.map((id) => id.toString()) || [];
 
     // Step 3: Add isFavorite flag to each PDF
-    const pdfsWithFavoriteFlag = pdfs.map((pdf) => {
+    const pdfsWithFavoriteFlag = pdfs?.map((pdf) => {
       const isFavorite = favoriteIds.includes(pdf._id.toString());
       return {
         ...pdf.toObject(),
@@ -120,6 +121,7 @@ export async function getUserPdfService(userId: any): Promise<any> {
 
     return pdfsWithFavoriteFlag;
   } catch (error) {
+    console.log(error);
     throw new InternalServerError("Unable to retrieve PDFs");
   }
 }
@@ -135,11 +137,11 @@ export async function getSinglePDFService({
     const pdf = await PdfModel.findOne({ fileId: fileId })
       .populate({
         path: "uploadedBy",
-        select: "firstName lastName email profilePicture",
+        select: "firstName lastName email avatar username",
       })
       .populate({
         path: "collaborators.userId",
-        select: "firstName lastName email profilePicture",
+        select: "firstName lastName email avatar username",
       });
 
     if (!pdf) {
@@ -159,13 +161,21 @@ export async function getSinglePDFService({
     const annotations = await AnnotationModel.find({ fileId: pdf.id })
       .populate({
         path: "createdBy",
-        select: "firstName lastName email profilePicture",
+        select: "firstName lastName email avatar username",
       })
       .lean();
+
+      const comments = await Comment.find({ fileId: pdf.id })
+        .populate({
+          path: "author",
+          select: "firstName lastName email avatar username commentId ",
+        })
+        .lean();
 
     return {
       ...pdf.toObject(),
       annotations,
+      comments,
     };
   } catch (error) {
     throw error;

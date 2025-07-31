@@ -68,6 +68,7 @@ export const getUserPdf = async (
     const data = await getUserPdfService(user);
     await successResponse(res, 200, "PDFs fetched successfully", data);
   } catch (error) {
+    console.log(error)
     next(error);
   }
 };
