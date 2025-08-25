@@ -46,7 +46,7 @@ const getFavoritesService = (userId, count) => __awaiter(void 0, void 0, void 0,
         throw new Error("User not found");
     let favorites = user.favoriteFiles;
     if (count && !isNaN(count)) {
-        favorites = favorites.slice(0, count);
+        favorites = favorites === null || favorites === void 0 ? void 0 : favorites.slice(0, count);
     }
     return favorites;
 });

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.verifyUserService = exports.createJwtTokenFunc = exports.generateSixDigitCode = exports.googleAuthService = exports.refreshService = exports.loginService = exports.registerService = void 0;
+exports.verifyUserService = exports.createJwtTokenFunc = exports.generateSixDigitCode = exports.generateUniqueUsername = exports.googleAuthService = exports.refreshService = exports.loginService = exports.registerService = void 0;
 const error_middleware_1 = require("../../middlewares/error.middleware");
 const userModel_1 = __importDefault(require("../../models/userModel"));
 const sessionModel_1 = __importDefault(require("../../models/sessionModel"));
@@ -30,6 +30,7 @@ const registerService = (registerData) => __awaiter(void 0, void 0, void 0, func
     // 🔐 Generate code & expiration
     const verificationCode = (0, exports.generateSixDigitCode)(); // e.g., "123456"
     const verificationCodeExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+    const username = yield (0, exports.generateUniqueUsername)(firstName, lastName);
     // ✅ Create the user
     const newUser = yield userModel_1.default.create({
         firstName,
@@ -38,6 +39,7 @@ const registerService = (registerData) => __awaiter(void 0, void 0, void 0, func
         password: hashpassword,
         verificationCode,
         verificationCodeExpiresAt,
+        username,
     });
     const userId = newUser.id;
     // 🔐 Create tokens
@@ -128,39 +130,48 @@ const googleAuthService = (userDetails) => __awaiter(void 0, void 0, void 0, fun
     try {
         let user = yield userModel_1.default.findOne({ email: lowerCaseEmail });
         if (!user) {
-            const emailPrefix = lowerCaseEmail.split("@")[0];
-            const username = `${emailPrefix}_${Date.now()}`.slice(0, 30);
+            const username = yield (0, exports.generateUniqueUsername)(first_name, last_name);
             user = yield userModel_1.default.create({
                 email: lowerCaseEmail,
-                password: "", // Empty since Google handles auth
+                password: "",
                 googleId,
-                profile: {
-                    create: {
-                        first_name,
-                        last_name,
-                        username,
-                        avatar: profilePicture || "",
-                    },
-                },
+                firstName: first_name,
+                lastName: last_name,
+                username,
+                avatar: profilePicture || "",
             });
+        }
+        else {
+            const updateFields = {};
+            if (!user.username) {
+                updateFields.username = yield (0, exports.generateUniqueUsername)(first_name, last_name);
+            }
+            if (!user.firstName) {
+                updateFields.firstName = first_name;
+            }
+            if (!user.lastName) {
+                updateFields.lastName = last_name;
+            }
+            if (!user.avatar && profilePicture) {
+                updateFields.avatar = profilePicture;
+            }
+            if (Object.keys(updateFields).length > 0) {
+                yield userModel_1.default.updateOne({ _id: user._id }, { $set: updateFields });
+                Object.assign(user, updateFields);
+            }
         }
         const userId = user.id;
         // === Generate Tokens ===
         const accessToken = yield (0, exports.createJwtTokenFunc)({
             UserIdentity: { userId },
-            expiresIn: process.env.ACCESS_TOKEN_EXP,
+            expiresIn: process.env.VERIFICATION_ACCESS_TOKEN_EXP,
         });
         const refreshToken = yield (0, exports.createJwtTokenFunc)({
             UserIdentity: { userId },
-            expiresIn: process.env.REFRESH_TOKEN_EXP,
+            expiresIn: process.env.VERIFICATION_REFRESH_TOKEN_EXP,
         });
-        const now = Date.now();
         // === Upsert Session ===
-        yield sessionModel_1.default.updateOne({ userId }, {
-            userId,
-            accessToken,
-            refreshToken,
-        }, { upsert: true });
+        yield sessionModel_1.default.updateOne({ userId }, { userId, accessToken, refreshToken }, { upsert: true });
         return { accessToken, refreshToken, userId };
     }
     catch (error) {
@@ -169,6 +180,20 @@ const googleAuthService = (userDetails) => __awaiter(void 0, void 0, void 0, fun
     }
 });
 exports.googleAuthService = googleAuthService;
+// add a uniqe username
+const generateUniqueUsername = (firstName, lastName) => __awaiter(void 0, void 0, void 0, function* () {
+    const fn = firstName.trim().toLowerCase().slice(0, 3);
+    const ln = lastName.trim().toLowerCase().slice(-3);
+    let baseUsername = fn + ln;
+    let username = baseUsername;
+    let count = 1;
+    while (yield userModel_1.default.exists({ username })) {
+        username = `${baseUsername}${count}`;
+        count++;
+    }
+    return username;
+});
+exports.generateUniqueUsername = generateUniqueUsername;
 // // Utility Functions
 const hashpasswordFunc = (password) => __awaiter(void 0, void 0, void 0, function* () {
     return yield bcrypt_1.default.hash(password, 12);

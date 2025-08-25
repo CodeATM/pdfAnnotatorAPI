@@ -26,6 +26,7 @@ const PdfModel_1 = __importDefault(require("../../models/PdfModel"));
 const invitesModel_1 = require("../../models/invitesModel");
 const annotationModel_1 = __importDefault(require("../../models/annotationModel"));
 const userModel_1 = __importDefault(require("../../models/userModel"));
+const commentModel_1 = require("../../models/commentModel");
 function uploadPDFToCloudinary(buffer, originalName) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -100,6 +101,7 @@ function savePDFToDatabase(title, fileUrl, owner, size) {
 }
 function getUserPdfService(userId) {
     return __awaiter(this, void 0, void 0, function* () {
+        var _a;
         try {
             // Step 1: Fetch user's PDFs (uploaded or collaborated on)
             const pdfs = yield PdfModel_1.default.find({
@@ -113,15 +115,16 @@ function getUserPdfService(userId) {
             });
             // Step 2: Fetch user's favorite file ObjectIds
             const user = yield userModel_1.default.findById(userId).select("favoriteFiles").lean();
-            const favoriteIds = (user === null || user === void 0 ? void 0 : user.favoriteFiles.map((id) => id.toString())) || [];
+            const favoriteIds = ((_a = user === null || user === void 0 ? void 0 : user.favoriteFiles) === null || _a === void 0 ? void 0 : _a.map((id) => id.toString())) || [];
             // Step 3: Add isFavorite flag to each PDF
-            const pdfsWithFavoriteFlag = pdfs.map((pdf) => {
+            const pdfsWithFavoriteFlag = pdfs === null || pdfs === void 0 ? void 0 : pdfs.map((pdf) => {
                 const isFavorite = favoriteIds.includes(pdf._id.toString());
                 return Object.assign(Object.assign({}, pdf.toObject()), { isFavorite });
             });
             return pdfsWithFavoriteFlag;
         }
         catch (error) {
+            console.log(error);
             throw new error_middleware_1.InternalServerError("Unable to retrieve PDFs");
         }
     });
@@ -132,11 +135,11 @@ function getSinglePDFService(_a) {
             const pdf = yield PdfModel_1.default.findOne({ fileId: fileId })
                 .populate({
                 path: "uploadedBy",
-                select: "firstName lastName email profilePicture",
+                select: "firstName lastName email avatar username",
             })
                 .populate({
                 path: "collaborators.userId",
-                select: "firstName lastName email profilePicture",
+                select: "firstName lastName email avatar username",
             });
             if (!pdf) {
                 throw new error_middleware_1.NotFoundError("File not found.");
@@ -150,10 +153,17 @@ function getSinglePDFService(_a) {
             const annotations = yield annotationModel_1.default.find({ fileId: pdf.id })
                 .populate({
                 path: "createdBy",
-                select: "firstName lastName email profilePicture",
+                select: "firstName lastName email avatar username",
             })
                 .lean();
-            return Object.assign(Object.assign({}, pdf.toObject()), { annotations });
+            const comments = yield commentModel_1.Comment.find({ fileId: pdf.id })
+                .populate({
+                path: "author",
+                select: "firstName lastName email avatar username commentId ",
+            })
+                .lean();
+            return Object.assign(Object.assign({}, pdf.toObject()), { annotations,
+                comments });
         }
         catch (error) {
             throw error;

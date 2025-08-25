@@ -47,6 +47,7 @@ const getUserPdf = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
         yield (0, response_1.successResponse)(res, 200, "PDFs fetched successfully", data);
     }
     catch (error) {
+        console.log(error);
         next(error);
     }
 });

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUser = exports.CheckUser = void 0;
+exports.updateUserService = exports.getUser = exports.CheckUser = void 0;
 const error_middleware_1 = require("../../middlewares/error.middleware");
 const userModel_1 = __importDefault(require("../../models/userModel"));
 const CheckUser = (userId) => __awaiter(void 0, void 0, void 0, function* () {
@@ -31,4 +31,29 @@ const getUser = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     return user;
 });
 exports.getUser = getUser;
+const updateUserService = (_a) => __awaiter(void 0, [_a], void 0, function* ({ userInfo, userId, }) {
+    const user = yield userModel_1.default.findById(userId);
+    if (!user)
+        throw new error_middleware_1.NotFoundError("User not found");
+    if (userInfo.firstName)
+        user.firstName = userInfo.firstName;
+    if (userInfo.lastName)
+        user.lastName = userInfo.lastName;
+    if (userInfo.avatar)
+        user.avatar = userInfo.avatar;
+    if (userInfo.username)
+        user.username = userInfo.username;
+    if (userInfo.gender &&
+        ["Male", "Female", "Other"].includes(userInfo.gender)) {
+        user.gender = userInfo.gender;
+    }
+    if (userInfo.usage &&
+        Array.isArray(userInfo.usage) &&
+        userInfo.usage.every((u) => ["Personal", "Work", "Academics", "Other"].includes(u))) {
+        user.usage = userInfo.usage;
+    }
+    yield user.save();
+    return user;
+});
+exports.updateUserService = updateUserService;
 //# sourceMappingURL=index.js.map

@@ -48,10 +48,11 @@ const UserSchema = new mongoose_1.Schema({
         type: String,
         enum: ["Male", "Female", "Other"],
     },
-    role: {
-        type: String,
-        enum: ["Personal", "Business", "Academics"],
-        default: "Personal",
+    usage: {
+        type: [String],
+        enum: ["Personal", "Work", "Academics", "Other"],
+        default: ["Personal"],
+        required: true,
     },
     email: {
         type: String,
@@ -63,7 +64,7 @@ const UserSchema = new mongoose_1.Schema({
     },
     password: {
         type: String,
-        minlength: [6, "Password must be at least 6 characters long"],
+        // minlength: [6, "Password must be at least 6 characters long"],
     },
     isEmailVerified: {
         type: Boolean,
@@ -83,6 +84,11 @@ const UserSchema = new mongoose_1.Schema({
             ref: "PDF",
         },
     ],
+    username: { type: String, required: true, unique: true, lowercase: true },
+    avatar: {
+        type: String,
+        required: false,
+    },
 }, {
     timestamps: true,
 });

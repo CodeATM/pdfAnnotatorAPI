@@ -65,7 +65,7 @@ const googleAuthentication = (req, res, next) => __awaiter(void 0, void 0, void 
             profilePicture: picture,
         };
         const data = yield (0, authService_1.googleAuthService)(userDetails);
-        yield (0, response_1.successResponse)(res, 200, "User logged in or signed up successfully via Google.", data);
+        yield (0, response_1.successResponse)(res, 200, "User Signed in Successfully", data);
     }
     catch (error) {
         console.error(error);
