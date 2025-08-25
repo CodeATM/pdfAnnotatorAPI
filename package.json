@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node dist/app.js",
     "dev": "nodemon --exec npx ts-node src/app.ts",
-    "build": "tsc"
+    "build": "tsc && xcopy src\\utils\\3rd-party\\Email\\templates dist\\utils\\3rd-party\\Email\\templates /E /I /Y"
   },
   "author": "",
   "license": "ISC",
