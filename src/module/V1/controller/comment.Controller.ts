@@ -17,7 +17,6 @@ export const addComment = async (
 
     if (!content) throw new BadRequestError("Content is required");
 
-    // ✅ Validate position and pageNumber only if this is a top-level comment
     const isReply = !!parentId;
 
     if (!isReply) {

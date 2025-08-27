@@ -18,7 +18,6 @@ const addComment = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
         const { content, parentId, position, pageNumber } = req.body;
         if (!content)
             throw new error_middleware_1.BadRequestError("Content is required");
-        // ✅ Validate position and pageNumber only if this is a top-level comment
         const isReply = !!parentId;
         if (!isReply) {
             if (!(position === null || position === void 0 ? void 0 : position.x) || !(position === null || position === void 0 ? void 0 : position.y)) {

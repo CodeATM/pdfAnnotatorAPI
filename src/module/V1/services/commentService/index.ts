@@ -6,6 +6,7 @@ import {
   BadRequestError,
   ForbiddenError,
 } from "../../middlewares/error.middleware";
+import { createActivity } from "../activityService";
 
 const mentionRegex = /@([a-zA-Z0-9_]+)/g;
 
@@ -86,6 +87,18 @@ export const createCommentService = async ({
       path: "parentId",
       select: "content",
     });
+
+  const activity = await createActivity({
+    payload: {
+      actor: authorId,
+      fileId: fileId,
+      type: "comment_added",
+      others: {
+        message: `added a comment on page`,
+        annotationId: newComment._id,
+      },
+    },
+  });
 
   return populatedComment;
 };

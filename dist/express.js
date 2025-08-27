@@ -14,6 +14,7 @@ const annotationsroute_1 = __importDefault(require("./module/V1/Routes/annotatio
 const collaborators_routes_1 = __importDefault(require("./module/V1/Routes/collaborators.routes"));
 const favourite_routes_1 = __importDefault(require("./module/V1/Routes/favourite.routes"));
 const comments_routes_1 = __importDefault(require("./module/V1/Routes/comments.routes"));
+const activities_routes_1 = __importDefault(require("./module/V1/Routes/activities.routes"));
 const app = (0, express_1.default)();
 (0, MongoDB_1.default)();
 // Middleware
@@ -41,6 +42,7 @@ app.use("/api/v1/anon", annotationsroute_1.default);
 app.use("/api/v1/col", collaborators_routes_1.default);
 app.use("/api/v1/fav", favourite_routes_1.default);
 app.use("/api/v1/comments", comments_routes_1.default);
+app.use("/api/v1/activities", activities_routes_1.default);
 app.use(error_middleware_1.errorHandler);
 exports.default = app;
 //# sourceMappingURL=express.js.map

@@ -10,6 +10,7 @@ import annotationRoutes from "./module/V1/Routes/annotationsroute";
 import ColRouter from "./module/V1/Routes/collaborators.routes";
 import favouriteRoute from "./module/V1/Routes/favourite.routes";
 import commentRoutes from "./module/V1/Routes/comments.routes";
+import activityRoutes from "./module/V1/Routes/activities.routes";
 const app = express();
 
 connectDB();
@@ -41,6 +42,7 @@ app.use("/api/v1/anon", annotationRoutes);
 app.use("/api/v1/col", ColRouter);
 app.use("/api/v1/fav", favouriteRoute);
 app.use("/api/v1/comments", commentRoutes);
+app.use("/api/v1/activities", activityRoutes);
 
 app.use(errorHandler);
 

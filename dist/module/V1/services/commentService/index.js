@@ -17,6 +17,7 @@ const userModel_1 = __importDefault(require("../../models/userModel"));
 const commentModel_1 = require("../../models/commentModel");
 const PdfModel_1 = __importDefault(require("../../models/PdfModel"));
 const error_middleware_1 = require("../../middlewares/error.middleware");
+const activityService_1 = require("../activityService");
 const mentionRegex = /@([a-zA-Z0-9_]+)/g;
 const createCommentService = (_a) => __awaiter(void 0, [_a], void 0, function* ({ content, authorId, fileId, parentCommentId, position, pageNumber, }) {
     const file = yield PdfModel_1.default.findOne({ fileId });
@@ -67,6 +68,17 @@ const createCommentService = (_a) => __awaiter(void 0, [_a], void 0, function* (
         .populate({
         path: "parentId",
         select: "content",
+    });
+    const activity = yield (0, activityService_1.createActivity)({
+        payload: {
+            actor: authorId,
+            fileId: fileId,
+            type: "comment_added",
+            others: {
+                message: `added a comment on page`,
+                annotationId: newComment._id,
+            },
+        },
     });
     return populatedComment;
 });

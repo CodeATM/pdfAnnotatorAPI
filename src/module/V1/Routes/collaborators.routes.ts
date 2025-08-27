@@ -8,7 +8,6 @@ import { verify } from "../middlewares/verify.middleware";
 
 const ColRouter = Router();
 
-// GET /:pdfId/collaborators
 ColRouter.get("/:pdfId/collaborators", verify, getCollaborators);
 ColRouter.patch("/:pdfId/collaborators/role", verify, patchCollaboratorRole);
 ColRouter.patch("/:pdfId/collaborators/remove", verify, removeCollaborator);
